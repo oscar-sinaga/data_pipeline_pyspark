@@ -8,3 +8,5 @@ __pycache__/
 
 # Ignore Google Cloud credentials or any sensitive creds folder
 creds/
+
+.ipynb_checkpoints/

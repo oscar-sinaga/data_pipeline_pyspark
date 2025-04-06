@@ -1,18 +1,17 @@
 import re
 import pandas as pd
 import datetime
-# from minio import Minio
+from minio import Minio
 from io import BytesIO
-from dotenv import load_dotenv
-from pathlib import Path
+from src.utils.helper import ACCESS_KEY_MINIO,SECRET_KEY_MINIO,PROFILING_BUCKET_NAME,MINIO_PORT,MINIO_HOST
+import json
 
 class Profiling:
-    # # Load .env dari root project
-    # load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env", override=True)
-
-    # ACCESS_KEY_MINIO = os.getenv("ACCESS_KEY_MINIO")
-    # SECRET_KEY_MINIO = os.getenv("SECRET_KEY_MINIO")
-    # bucket_name = ""
+    ACCESS_KEY_MINIO = ACCESS_KEY_MINIO
+    SECRET_KEY_MINIO = SECRET_KEY_MINIO
+    bucket_name = PROFILING_BUCKET_NAME
+    MINIO_PORT=MINIO_PORT
+    MINIO_HOST=MINIO_HOST
 
     def __init__(self, data, table_name) -> None:
         """
@@ -105,32 +104,32 @@ class Profiling:
         else:
             return False
     
-    # def save_report(self):
+    def save_report(self):
 
-    #     current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-    #     # Initialize MinIO client
-    #     client = Minio('localhost:9000',
-    #                 access_key=self.ACCESS_KEY_MINIO,
-    #                 secret_key=self.SECRET_KEY_MINIO,
-    #                 secure=False)
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        # Initialize MinIO client
+        client = Minio(f'{self.MINIO_HOST}:{self.MINIO_PORT}',
+                    access_key=self.ACCESS_KEY_MINIO,
+                    secret_key=self.SECRET_KEY_MINIO,
+                    secure=False)
 
-    #     # Make a bucket if it doesn't exist
-    #     if not client.bucket_exists(self.bucket_name):
-    #         client.make_bucket(self.bucket_name)
+        # Make a bucket if it doesn't exist
+        if not client.bucket_exists(self.bucket_name):
+            client.make_bucket(self.bucket_name)
 
-    #     # Convert dict to JSON and then to bytes
-    #     json_report = json.dumps(self.dict_report)
-    #     json_bytes = json_report.encode('utf-8')
+        # Convert dict to JSON and then to bytes
+        json_report = json.dumps(self.dict_report)
+        json_bytes = json_report.encode('utf-8')
 
-    #     # Upload the CSV file to the bucket
-    #     client.put_object(
-    #         bucket_name=self.bucket_name,
-    #         object_name=f"{self.table_name}_{current_date}.json", #name the fail source name and current etl date
-    #         data=BytesIO(json_bytes),
-    #         length=len(json_bytes),
-    #         content_type='application/csv'
-    #     )
-    #     return f"Save as {self.table_name}_{current_date}.json"
+        # Upload the CSV file to the bucket
+        client.put_object(
+            bucket_name=self.bucket_name,
+            object_name=f"{self.table_name}_{current_date}.json", #name the fail source name and current etl date
+            data=BytesIO(json_bytes),
+            length=len(json_bytes),
+            content_type='application/csv'
+        )
+        return f"Save as {self.table_name}_{current_date}.json"
 
     def reporting(self):
         """
@@ -152,6 +151,6 @@ class Profiling:
                 self.dict_report["report"][col]["percentage_valid_date"] = round(self.get_percentage_valid_date(col),2)
         
         print(self.dict_report)
-        # self.save_report()
+        self.save_report()
         return self.dict_report
     
