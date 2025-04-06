@@ -1,6 +1,10 @@
-assets/*
-!assets/.gitignore
-protected/runtime/*
-!protected/runtime/.gitignore
-protected/data/*.db
-themes/classic/views/
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore env file
+.env
+
+# Ignore Google Cloud credentials or any sensitive creds folder
+creds/
