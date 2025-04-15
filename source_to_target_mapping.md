@@ -74,7 +74,7 @@
 
 | Source Column        | Source Type | Target Column       | Target Type     | Description                            |
 |---------------------|-------------|----------------------|------------------|----------------------------------------|
-| acquisition_id      | int     | acquisition_id       | int          | Primary Key                            |
+| acquisition_id      | int     | acquisition_nk       | int          | Primary Key                            |
 | acquiring_object_id | varchar (255)     | acquiring_company_id | varchar (255)          | FK to dim_company                      |
 | acquired_object_id  | varchar (255)     | acquired_company_id  | varchar (255)          | FK to dim_company                      |
 | acquired_at         | date        | acquired_at             | int              | Formatted to YYYYMMDD and FK to dim_date.date_key |

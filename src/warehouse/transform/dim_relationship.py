@@ -6,7 +6,7 @@ from src.warehouse.load.handle_error import handle_error
 from src.utils.helper import extract_target
 from src.utils.log import etl_log
 
-def transform_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
+def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """
     This function is used to transform the data from the staging area before loading it into the warehouse area.
     """
