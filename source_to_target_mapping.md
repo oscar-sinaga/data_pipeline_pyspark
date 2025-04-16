@@ -110,7 +110,7 @@
 | funded_at            | date        | funded_at         | int              | Formatted to YYYYMMDD and FK to dim_date.date_key |
 | name                 | varchar (255)        | fund_name        | varchar (255)             | Renamed                                |
 | raised_amount        | numeric(15,2)     | raised_amount    | numeric(15,2)          | Direct Mapping                         |
-| raised_currency_code | varchar (255)        | currency_code    | varchar (3)             | Direct Mapping                         |
+| raised_currency_code | varchar (255)        | raised_currency_code    | varchar (255)             | Direct Mapping                         |
 | created_at           | timestamp        | created_at             | timestamp             |  Formatted to YYYYMMDD and FK to dim_date.date_key |
 | updated_at             | timestamp        | updated_at               | timestamp             |  Formatted to YYYYMMDD and FK to dim_date.date_key |
 ---
