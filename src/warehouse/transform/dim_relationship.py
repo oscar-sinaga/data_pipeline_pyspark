@@ -56,12 +56,12 @@ def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFr
         data['relationship_order'] = data['relationship_order'].astype('int')
 
         #Lookup `people_id` from `dim_speciality` table based on `company_nk` 
-        people = extract_target('dim_company')
-        data['people_id'] = data['people_nk'].apply(lambda x: people.loc[people['people_nk'] == x, 'people_id'].values[0] if len(people.loc[people['people_nk'] == x, 'people_id'].values) > 0 else None)
+        dim_people = extract_target('dim_people')
+        data['people_id'] = data['people_nk'].apply(lambda x: dim_people.loc[dim_people['people_nk'] == x, 'people_id'].values[0] if len(dim_people.loc[dim_people['people_nk'] == x, 'people_id'].values) > 0 else None)
        
         #Lookup `company_id` from `dim_speciality` table based on `company_nk` 
-        company = extract_target('dim_company')
-        data['company_id'] = data['company_nk'].apply(lambda x: company.loc[company['company_nk'] == x, 'company_id'].values[0] if len(company.loc[company['company_nk'] == x, 'company_id'].values) > 0 else None)
+        dim_company = extract_target('dim_company')
+        data['company_id'] = data['company_nk'].apply(lambda x: dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values[0] if len(dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values) > 0 else None)
 
         # drop unnecessary columns
         columns_dropped = [

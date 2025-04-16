@@ -6,7 +6,7 @@ from src.warehouse.load.handle_error import handle_error
 from src.utils.helper import extract_target
 from src.utils.log import etl_log
 
-def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
+def transform_fact_funding_rounds(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """
     This function is used to transform the data from the staging area before loading it into the warehouse area.
     """
@@ -17,6 +17,7 @@ def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFr
         columns_to_picked = [
             'funding_round_id', 
             'object_id',
+            'funded_at',
             'funding_round_type',
             'funding_round_code',
             'raised_amount_usd',
@@ -36,7 +37,18 @@ def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFr
             'is_first_round':'round_position_desc',
             'is_last_round':'round_stage_desc'
         }
-        data = data.rename(columns=columns_to_renamed)  
+        data = data.rename(columns=columns_to_renamed)
+
+        # Mapping nilai boolean ke deskripsi
+        data['round_position_desc'] = data['round_position_desc'].map({
+            True: 'First Round',
+            False: 'Not First Round'
+        })
+
+        data['round_stage_desc'] = data['round_stage_desc'].map({
+            True: 'Last Round',
+            False: 'Ongoing Round'
+        })  
         
         # deduplication based on relationship_nk
         data = data.drop_duplicates(subset='funding_round_nk')
@@ -49,22 +61,14 @@ def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFr
         data['post_money_valuation_usd'] = data['post_money_valuation_usd'].fillna(0)
 
         # Ubah tipe data
-        data['start_at'] = data['start_at'].astype('int')
-        data['end_at'] = data['end_at'].astype('int')
-        data['relationship_nk'] = data['relationship_nk'].astype('int')
-        data['relationship_order'] = data['relationship_order'].astype('int')
-
-        #Lookup `people_id` from `dim_speciality` table based on `company_nk` 
-        people = extract_target('dim_company')
-        data['people_id'] = data['people_nk'].apply(lambda x: people.loc[people['people_nk'] == x, 'people_id'].values[0] if len(people.loc[people['people_nk'] == x, 'people_id'].values) > 0 else None)
+        data['funded_at'] = data['funded_at'].astype('int')
        
         #Lookup `company_id` from `dim_speciality` table based on `company_nk` 
-        company = extract_target('dim_company')
-        data['company_id'] = data['company_nk'].apply(lambda x: company.loc[company['company_nk'] == x, 'company_id'].values[0] if len(company.loc[company['company_nk'] == x, 'company_id'].values) > 0 else None)
+        dim_company = extract_target('dim_company')
+        data['company_id'] = data['company_nk'].apply(lambda x: dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values[0] if len(dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values) > 0 else None)
 
         # drop unnecessary columns
         columns_dropped = [
-            'people_id',
             'company_nk'
         ]
         data = data.drop(columns = columns_dropped)

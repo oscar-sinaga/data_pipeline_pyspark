@@ -49,19 +49,22 @@ def transform_fact_acquisitions(data: pd.DataFrame, table_name: str) -> pd.DataF
         data['acquired_at'] = data['acquired_at'].astype('int')
 
         #Lookup `people_id` from `dim_company` table based on `company_nk` 
-        company = extract_target('dim_company')
-        data['people_id'] = data['people_nk'].apply(lambda x: company.loc[company['people_nk'] == x, 'people_id'].values[0] if len(company.loc[company['people_nk'] == x, 'people_id'].values) > 0 else None)
-       
-        #Lookup `company_id` from `dim_speciality` table based on `company_nk` 
-        company = extract_target('dim_company')
-        data['company_id'] = data['company_nk'].apply(lambda x: company.loc[company['company_nk'] == x, 'company_id'].values[0] if len(company.loc[company['company_nk'] == x, 'company_id'].values) > 0 else None)
-
-        # drop unnecessary columns
-        columns_dropped = [
-            'people_id',
-            'company_nk'
-        ]
-        data = data.drop(columns = columns_dropped)
+        dim_company = extract_target('dim_company')
+        # Lookup acquiring_company_id
+        data['acquiring_company_id'] = data['acquiring_company_nk'].apply(
+            lambda x: dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values[0]
+            if len(dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values) > 0 else None
+        )
+        
+        # Lookup acquired_company_id
+        data['acquired_company_id'] = data['acquired_company_nk'].apply(
+            lambda x: dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values[0]
+            if len(dim_company.loc[dim_company['company_nk'] == x, 'company_id'].values) > 0 else None
+        )
+        
+        # Drop natural key columns
+        columns_to_drop = ['acquiring_company_nk', 'acquired_company_nk']
+        data = data.drop(columns=columns_to_drop)
 
         log_msg = {
                 "step" : "warehouse",
