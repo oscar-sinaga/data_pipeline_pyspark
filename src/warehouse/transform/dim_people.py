@@ -18,13 +18,15 @@ def transform_dim_people(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
             'people_id', 
             'first_name',
             'last_name',
-            'full_name',
             'affiliation_name',
             'birthplace',
             # 'created_at',
             # 'updated_at'
         ]
         data = data.loc[:,columns_to_picked]
+
+        # Derived columns
+        data['full_name'] = data['first_name'].str() + data['last_name'].str()
 
         # rename column
         columns_to_renamed = {

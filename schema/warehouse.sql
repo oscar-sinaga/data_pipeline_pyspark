@@ -17,7 +17,8 @@ CREATE TABLE dim_datetime (
 );
 
 CREATE TABLE dim_company (
-    company_id VARCHAR(255) PRIMARY KEY,
+    company_id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    company_nk VARCHAR(255) PRIMARY KEY,
     description TEXT,
     city VARCHAR(255),
     state_code VARCHAR(255),
@@ -26,12 +27,12 @@ CREATE TABLE dim_company (
     longitude DECIMAL(10,6),
     created_at INTEGER,
     updated_at INTEGER,
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE dim_people (
-    person_id INTEGER PRIMARY KEY,
+    company_id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    people_nk INTEGER PRIMARY KEY,
     full_name VARCHAR(255),
     first_name VARCHAR(255),
     last_name VARCHAR(255),
