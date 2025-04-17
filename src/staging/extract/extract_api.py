@@ -7,9 +7,10 @@ import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from src.utils.log import etl_log, read_etl_log
+from datetime import timedelta
 
 
-LINK_API_MILESTONE = ''
+LINK_API_MILESTONE = "https://api-milestones.vercel.app/api/data"
 
 link_api = LINK_API_MILESTONE
 
@@ -38,20 +39,33 @@ def extract_api(link_api:str, list_parameter:dict):
 
 def extract_backfilling(start_date, current_date):
     df_milestones = pd.DataFrame()
-    
+
+    # Pastikan string format
+    if not isinstance(start_date, str):
+        start_date = start_date.strftime("%Y-%m-%d")
+    if not isinstance(current_date, str):
+        current_date = current_date.strftime("%Y-%m-%d")
+
     start = datetime.strptime(start_date, "%Y-%m-%d")
     end = datetime.strptime(current_date, "%Y-%m-%d")
-    
+
+    # Handle kondisi start_date == current_date
+    if start == end:
+        list_parameter = {
+            "start_date": start_date,
+            "end_date": (end + timedelta(days=1)).strftime("%Y-%m-%d")  # Buat end_date jadi satu hari setelahnya
+        }
+        df_backfilling = extract_api(link_api, list_parameter)
+        return df_backfilling.drop_duplicates(keep='first')
+
     # Jika selisih tidak lebih dari 1 tahun, langsung ambil semua
-    if end - start <= relativedelta(years=1):
+    if end - start <= timedelta(days=365):
         list_parameter = {
             "start_date": start_date,
             "end_date": current_date
         }
         df_backfilling = extract_api(link_api, list_parameter)
-        df_milestones = pd.concat([df_milestones, df_backfilling])
-        df_milestones = df_milestones.drop_duplicates(keep='first')
-        return df_milestones
+        return df_backfilling.drop_duplicates(keep='first')
 
     # Jika lebih dari 1 tahun, lakukan loop tahunan
     while start + relativedelta(years=1) < end:
@@ -63,8 +77,6 @@ def extract_backfilling(start_date, current_date):
         df_backfilling = extract_api(link_api, list_parameter)
         df_milestones = pd.concat([df_milestones, df_backfilling])
         df_milestones = df_milestones.drop_duplicates(keep='first')
-
-        # Geser window tahunannya
         start = temp_end
 
     # Ambil sisa data dari akhir loop sampai current_date
@@ -77,6 +89,7 @@ def extract_backfilling(start_date, current_date):
     df_milestones = df_milestones.drop_duplicates(keep='first')
 
     return df_milestones
+
 
 
 # Extract data from 1950-01-01 in chunks of 1 year until today

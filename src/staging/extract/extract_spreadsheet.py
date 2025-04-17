@@ -56,21 +56,22 @@ def extract_sheet(table_name:str) -> pd.DataFrame:
     
     return df_result
 
-def extract_spreadsheet(worksheet_name: str):
+def extract_spreadsheet(table_name: str):
 
     try:
         # extract data
-        df_data = extract_sheet(worksheet_name = worksheet_name)
+        df_data = extract_sheet(table_name = table_name)
         
         # success log message
         log_msg = {
             "step" : "staging",
             "status": "success",
             "source": "spreadsheet",
-            "table_name": worksheet_name,
+            "table_name": table_name,
             "process": "extraction",
             "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Current timestamp
         }
+        return df_data
     except Exception as e:
         # fail log message
         log_msg = {
@@ -78,11 +79,10 @@ def extract_spreadsheet(worksheet_name: str):
             "status": "failed",
             "source": "spreadsheet",
             "process": "extraction",
-            "table_name": worksheet_name,
+            "table_name": table_name,
             "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Current timestamp
         }
     finally:
         # load log to csv file
        etl_log(log_msg)
         
-    return df_data
