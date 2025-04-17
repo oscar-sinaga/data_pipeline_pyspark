@@ -47,7 +47,7 @@ def load_staging(data, schema:str, table_name: str, idx_name:str, source):
         print(e)
         # Handling error: save data to Object Storage
         try:
-            handle_error(data = data, bucket_name='error-startup-investments', table_name= table_name, process='staging_load')
+            handle_error(data = data,table_name= table_name, process='staging_load')
         except Exception as e:
             print(e)
     finally:
