@@ -7,8 +7,8 @@ import csv
 from datetime import datetime
 import numpy as np 
 from pathlib import Path
-from src.utils.helper import CRED_PATH,KEY_SPREADSHEET_PEOPLE,KEY_SPREADSHEET_RELATIONSHIPS
-from src.utils.log import etl_log
+from src.utils.helper import CRED_PATH,KEY_SPREADSHEET_PEOPLE,KEY_SPREADSHEET_RELATIONSHIPS,stg_engine
+from src.utils.log import etl_log,read_etl_log
 
 def auth_gspread():
     scope = ['https://spreadsheets.google.com/feeds',
@@ -60,7 +60,30 @@ def extract_spreadsheet(table_name: str):
 
     try:
         # extract data
-        df_data = extract_sheet(table_name = table_name)
+        if table_name=='people':
+            df_data = extract_sheet(table_name = table_name)
+            df_data['created_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            df_data['created_at'] = pd.to_datetime(df_data['created_at'])
+
+        elif table_name=='relationships':
+            # Get date from previous process
+            filter_log = {"step_name": "staging",
+                        "table_name": table_name,
+                        "status": "success",
+                        "process": "load"}
+            etl_date = read_etl_log(filter_log)
+
+            # If no previous extraction has been recorded (etl_date is empty), set etl_date to '1111-01-01' indicating the initial load.
+            # Otherwise, retrieve data added since the last successful extraction (etl_date).
+            if(etl_date['max'][0] == None):
+                etl_date = '1700-01-01'
+            else:
+                etl_date = etl_date[max][0]
+            
+            etl_date = pd.to_datetime(etl_date)      # Pastikan dalam format datetime
+            df_data = extract_sheet(table_name = table_name)
+            df_data['created_at'] = pd.to_datetime(df_data['created_at'])
+            df_data = df_data[df_data['created_at'] > etl_date]
         
         # success log message
         log_msg = {

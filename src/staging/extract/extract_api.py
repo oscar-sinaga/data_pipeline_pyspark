@@ -112,14 +112,17 @@ def extract_api_milestones(table_name:str):
         else:
             etl_date = etl_date[max][0]
             # etl_date = etl_date.strftime("%Y-%m-%d")
-        
+
         df = extract_backfilling(etl_date,current_date)
+        etl_date = pd.to_datetime(etl_date)      # Pastikan dalam format datetime
+        df['created_at'] = pd.to_datetime(df['created_at'])
+        df = df[df['created_at'] > etl_date]
 
         log_msg = {
                 "step" : "staging",
                 "process":"extraction",
                 "status": "success",
-                "source": "database",
+                "source": "api",
                 "table_name": table_name,
                 "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Current timestamp
             }
@@ -130,7 +133,7 @@ def extract_api_milestones(table_name:str):
             "step" : "staging",
             "process":"extraction",
             "status": "failed",
-            "source": "database",
+            "source": "api",
             "table_name": table_name,
             "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),  # Current timestamp
             "error_msg": str(e)
