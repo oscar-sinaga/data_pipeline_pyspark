@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from src.utils.helper import startup_investments_engine_pyspark
-from src.utils.log import etl_log, read_etl_log,etl_log_pyspark,read_etl_log_pyspark
+from src.utils.log import etl_log, read_etl_log,etl_log_pyspark
 import numpy as np
 from pyspark.sql import SparkSession
 
@@ -20,27 +20,9 @@ def extract_database(spark: SparkSession, table_name):
     current_timestamp = datetime.now()
     
     try:
-        # Get date from previous process
-        filter_log = {"step_name": "staging",
-                    "table_name": table_name,
-                    "status": "success",
-                    "process": "load"}
-        etl_date = read_etl_log_pyspark(spark,filter_log)
-
-
-        if etl_date["max"][0] is None:
-            etl_date = "1111-01-01"
-        else:
-            etl_date = etl_date["max"][0]  # Ini tipe-nya datetime
-            etl_date = etl_date.strftime("%Y-%m-%d %H:%M:%S")
-            
-
-        # Create SQL subquery untuk incremental load
-        query = f"(SELECT * FROM {table_name} WHERE created_at > '{etl_date}') AS tmp"
-
         # read data
         df = spark.read.jdbc(url = DB_URL, 
-                             table = query, 
+                             table = table_name, 
                              properties = connection_properties)
             
         # log message
