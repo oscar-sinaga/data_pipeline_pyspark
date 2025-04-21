@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 from src.warehouse.load.handle_error import handle_error
-from src.utils.helper import extract_target
+# from src.utils.helper import extract_target
 from src.utils.log import etl_log
 
 def transform_dim_people(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
@@ -26,7 +26,7 @@ def transform_dim_people(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
         data = data.loc[:,columns_to_picked]
 
         # Derived columns
-        data['full_name'] = data['first_name'].str() + data['last_name'].str()
+        data['full_name'] = data['first_name'] + ' ' +  data['last_name']
 
         # rename column
         columns_to_renamed = {
@@ -41,6 +41,9 @@ def transform_dim_people(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
         # fill the nan row data
         data['affiliation'] = data['affiliation'].fillna('Unknown')
         data['birthplace'] = data['birthplace'].fillna('Unknown')
+
+        # Ubah tipe data
+        data['people_nk'] = data['people_nk'].astype('int')
 
         log_msg = {
                 "step" : "warehouse",

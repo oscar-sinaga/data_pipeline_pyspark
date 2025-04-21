@@ -1,16 +1,19 @@
 import pandas as pd
+import sqlalchemy
+from dotenv import load_dotenv
+import os
 from pangres import upsert
 from datetime import datetime
 
-from src.utils.helper import stg_engine
+from src.utils.helper import wh_engine
 from src.staging.load.handle_error import handle_error
 from src.utils.log import etl_log
 
 
-def load_staging(data, schema:str, table_name: str, idx_name:str, source):
+def load_warehouse(data, schema:str, table_name: str, idx_name:str, source, table_process:str):
     try:
         # create connection to database
-        conn = stg_engine()
+        conn = wh_engine()
         
         # set data index or primary key
         data = data.set_index(idx_name)
@@ -24,11 +27,11 @@ def load_staging(data, schema:str, table_name: str, idx_name:str, source):
         
         #create success log message
         log_msg = {
-                "step" : "staging",
+                "step" : "warehouse",
                 "process":"load",
                 "status": "success",
                 "source": source,
-                "table_name": table_name,
+                "table_name": table_process,
                 "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Current timestamp
             }
         # return data
@@ -36,18 +39,18 @@ def load_staging(data, schema:str, table_name: str, idx_name:str, source):
 
         #create fail log message
         log_msg = {
-            "step" : "staging",
+            "step" : "warehouse",
             "process":"load",
             "status": "failed",
             "source": source,
-            "table_name": table_name,
+            "table_name": table_process,
             "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S") , # Current timestamp
             "error_msg": str(e)
         }
         print(e)
         # Handling error: save data to Object Storage
         try:
-            handle_error(data = data, bucket_name='error-startup-investments', table_name= table_name, process='staging_load')
+            handle_error(data = data, table_name= table_name, process='warehouse_load')
         except Exception as e:
             print(e)
     finally:

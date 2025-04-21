@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 from src.warehouse.load.handle_error import handle_error
-from src.utils.helper import extract_target
+# from src.utils.helper import extract_target
 from src.utils.log import etl_log
 
 def transform_dim_company(data: pd.DataFrame, table_name: str) -> pd.DataFrame:

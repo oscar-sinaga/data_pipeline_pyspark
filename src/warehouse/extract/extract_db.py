@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 from src.utils.helper import stg_engine
 from src.utils.log import etl_log, read_etl_log
-
+import numpy as np
 
 def extract_database(table_name: str): 
     try:
@@ -28,6 +28,7 @@ def extract_database(table_name: str):
 
         #Execute the query with pd.read_sql
         df = pd.read_sql(sql=query, con=conn, params=(etl_date,))
+        df = df.replace('', np.nan)
         log_msg = {
                 "step" : "warehouse",
                 "process":"extraction",

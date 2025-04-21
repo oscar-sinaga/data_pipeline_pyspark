@@ -2,6 +2,10 @@
 -- DIMENSION TABLES
 -- =========================
 
+-- Extension for UUID
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+
 CREATE TABLE dim_datetime (
     datetime_key INTEGER PRIMARY KEY,      -- Format: YYYYMMDDHH24MISS
     full_datetime TIMESTAMP,               -- Contoh: 2009-05-24 10:42:44
@@ -25,42 +29,36 @@ CREATE TABLE dim_company (
     country_code VARCHAR(255),
     latitude DECIMAL(10,6),
     longitude DECIMAL(10,6),
-    created_at INTEGER,
-    updated_at INTEGER,
     created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE dim_people (
-    company_id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    people_id uuid NOT NULL DEFAULT uuid_generate_v4(),
     people_nk INTEGER PRIMARY KEY,
     full_name VARCHAR(255),
     first_name VARCHAR(255),
     last_name VARCHAR(255),
     affiliation VARCHAR(255),
     birthplace VARCHAR(255),
-    created_at INTEGER,
-    updated_at INTEGER,
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE dim_relationship (
     relationship_id INTEGER PRIMARY KEY,
-    person_id INTEGER,
+    people_id INTEGER,
     company_id VARCHAR(255),
     title TEXT,
     start_at INTEGER,
     end_at INTEGER,
     relationship_status VARCHAR(255),
     relationship_order INT,
-    created_at INTEGER,
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP
     updated_at INTEGER,
     FOREIGN KEY (person_id) REFERENCES dim_people(person_id),
     FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
     FOREIGN KEY (start_at) REFERENCES dim_datetime(datetime_key),
     FOREIGN KEY (end_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+
 );
 
 -- =========================

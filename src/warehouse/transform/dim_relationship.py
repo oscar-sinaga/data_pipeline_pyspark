@@ -1,9 +1,9 @@
 import pandas as pd
 from datetime import datetime
-
+from src.utils.helper import extract_target
 
 from src.warehouse.load.handle_error import handle_error
-from src.utils.helper import extract_target
+# from src.utils.helper import extract_target
 from src.utils.log import etl_log
 
 def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFrame:
@@ -43,8 +43,16 @@ def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFr
 
         # fill the nan row data
         # Ubah kolom ke datetime, isi NaT dengan 1900-01-01
-        data['start_at'] = pd.to_datetime(data['start_at'], errors='coerce').fillna(pd.Timestamp('2100-01-01'))
-        data['end_at'] = pd.to_datetime(data['end_at'], errors='coerce').fillna(pd.Timestamp('2100-01-01'))
+        data['start_at'] = (
+            pd.to_datetime(data['start_at'], errors='coerce')
+            .fillna(pd.Timestamp('2100-01-01'))
+            .dt.strftime('%Y%m%d')
+        )
+        data['end_at'] = (
+            pd.to_datetime(data['end_at'], errors='coerce')
+            .fillna(pd.Timestamp('2100-01-01'))
+            .dt.strftime('%Y%m%d')
+        )
         data['title'] = data['title'].fillna('Unknown')
         data['relationship_status'] = data['relationship_status'].fillna('Unknown')
         data['relationship_order'] = data['relationship_order'].fillna(0)
@@ -65,7 +73,7 @@ def transform_dim_relationship(data: pd.DataFrame, table_name: str) -> pd.DataFr
 
         # drop unnecessary columns
         columns_dropped = [
-            'people_id',
+            'people_nk',
             'company_nk'
         ]
         data = data.drop(columns = columns_dropped)

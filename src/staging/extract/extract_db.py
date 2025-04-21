@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 from src.utils.helper import startup_investments_engine
 from src.utils.log import etl_log, read_etl_log
-
+import numpy as np
 
 def extract_database(table_name: str): 
     try:
@@ -36,6 +36,9 @@ def extract_database(table_name: str):
 
         #Execute the query with pd.read_sql
         df = pd.read_sql(sql=query, con=conn, params=(etl_date,))
+        # Replace all data which is '' to be np.nan
+        df = df.replace('', np.nan)
+        
         log_msg = {
                 "step" : "staging",
                 "process":"extraction",

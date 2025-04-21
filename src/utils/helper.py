@@ -37,10 +37,10 @@ DB_PASS = os.getenv("DB_PASS")
 DB_NAME_STARTUP_INVESTMENTS = os.getenv("DB_NAME_STARTUP_INVESTMENTS")
 DB_NAME_STG = os.getenv("DB_NAME_STG")
 DB_NAME_LOG = os.getenv("DB_NAME_LOG")
-# DB_NAME_WH = os.getenv("DB_NAME_WH")
+DB_NAME_WH = os.getenv("DB_NAME_WH")
 DB_PORT_STG = os.getenv("DB_PORT_WH")
 DB_PORT_LOG = os.getenv("DB_PORT_WH")
-# DB_PORT_WH = os.getenv("DB_PORT_WH")
+DB_PORT_WH = os.getenv("DB_PORT_WH")
 
 # #MODEL PATH
 MODEL_PATH_LOG_ETL = 'src/utils/model'
@@ -56,8 +56,8 @@ def stg_engine():
 def log_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_LOG}/{DB_NAME_LOG}")
 
-# def wh_engine():
-#     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_WH}/{DB_NAME_WH}")
+def wh_engine():
+    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_WH}/{DB_NAME_WH}")
 
 def read_sql(PATH, table_name):
     #open your file .sql
@@ -67,16 +67,16 @@ def read_sql(PATH, table_name):
     #return query text
     return content
 
-# def extract_target(table_name: str):
-#     """
-#     this function is used to extract data from the data warehouse.
-#     """
-#     conn = wh_engine()
+def extract_target(table_name: str):
+    """
+    this function is used to extract data from the data warehouse.
+    """
+    conn = wh_engine()
 
-#     # Constructs a SQL query to select all columns from the specified table_name where created_at is greater than etl_date.
-#     query = f"SELECT * FROM {table_name}"
+    # Constructs a SQL query to select all columns from the specified table_name where created_at is greater than etl_date.
+    query = f"SELECT * FROM {table_name}"
 
-#     # Execute the query with pd.read_sql
-#     df = pd.read_sql(sql=query, con=conn)
+    # Execute the query with pd.read_sql
+    df = pd.read_sql(sql=query, con=conn)
     
-#     return df
+    return df
