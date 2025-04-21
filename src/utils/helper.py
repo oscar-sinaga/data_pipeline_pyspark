@@ -4,6 +4,9 @@ import os
 # import sentry_sdk
 from pathlib import Path
 import pandas as pd
+from pyspark.sql import SparkSession
+# Lokasi file JDBC PostgreSQL driver (.jar)
+jdbc_driver_path = r"C:\jdbc_drivers\postgresql-42.7.5.jar"
 
 # Load .env dari root
 BASE_DIR = Path(__file__).resolve().parents[2]  # Mengarah ke folder data_pipeline_pyspark/
@@ -50,11 +53,19 @@ MODEL_PATH_LOG_ETL = str(BASE_DIR / MODEL_PATH_LOG_ETL)
 def startup_investments_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME_STARTUP_INVESTMENTS}")
 
+def startup_investments_engine_pyspark():
+    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT}/{DB_NAME_STARTUP_INVESTMENTS}"
+    return DB_URL, DB_USER, DB_PASS
+
 def stg_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_STG}/{DB_NAME_STG}")
 
 def log_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_LOG}/{DB_NAME_LOG}")
+
+def log_engine_pyspark():
+    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT_LOG}/{DB_NAME_LOG}"
+    return DB_URL, DB_USER, DB_PASS
 
 def wh_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_WH}/{DB_NAME_WH}")
