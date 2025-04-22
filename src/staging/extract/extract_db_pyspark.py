@@ -4,6 +4,8 @@ from src.utils.helper import startup_investments_engine_pyspark
 from src.utils.log import etl_log_pyspark,read_etl_log_pyspark
 import numpy as np
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import lit
+from pyspark.sql.types import StringType
 
 def extract_database(spark: SparkSession, table_name: str):
     # Get DB connection config
@@ -46,8 +48,11 @@ def extract_database(spark: SparkSession, table_name: str):
 
         # Step 4: Buat log extraction sukses
         log_msg = spark.sparkContext.parallelize([(
-            "staging", "extraction", "success", "database", table_name, current_timestamp
+        "staging", "extraction", "success", "database", table_name, current_timestamp
         )]).toDF(["step", "process", "status", "source", "table_name", "etl_date"])
+
+        # Tambah kolom error_msg bernilai NULL
+        log_msg = log_msg.withColumn("error_msg", lit(None).cast(StringType()))
 
         return df
 
@@ -61,4 +66,5 @@ def extract_database(spark: SparkSession, table_name: str):
 
         return None
     finally:
+        log_msg.show()
         etl_log_pyspark(spark, log_msg)
