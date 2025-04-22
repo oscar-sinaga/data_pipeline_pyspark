@@ -60,6 +60,10 @@ def startup_investments_engine_pyspark():
 def stg_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_STG}/{DB_NAME_STG}")
 
+def stg_engine_pyspark():
+    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT_STG}/{DB_NAME_STG}"
+    return DB_URL, DB_USER, DB_PASS
+
 def log_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_LOG}/{DB_NAME_LOG}")
 

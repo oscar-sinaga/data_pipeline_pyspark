@@ -2,6 +2,9 @@ import pandas as pd
 import sqlalchemy
 from src.utils.helper import log_engine, log_engine_pyspark, read_sql,MODEL_PATH_LOG_ETL
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+from pyspark.sql.types import StringType, TimestampType
+
 
 def etl_log(log_msg: dict):
     try:
@@ -69,6 +72,8 @@ def etl_log_pyspark(spark: SparkSession, log_msg):
             "password": DB_PASS,
             "driver": "org.postgresql.Driver" # set driver postgres
         }
+        # Cast schema sesuai dengan struktur PostgreSQL
+        log_msg = cast_log_schema(log_msg)
 
         log_msg.write.jdbc(url = DB_URL,
                     table = table_name,
@@ -114,3 +119,13 @@ def read_etl_log_pyspark(spark: SparkSession, filter_params: dict):
     except Exception as e:
         print("Can't execute your query. Cause: ", str(e))
         return None
+
+def cast_log_schema(df):
+    return df \
+        .withColumn("step", col("step").cast(StringType())) \
+        .withColumn("process", col("process").cast(StringType())) \
+        .withColumn("status", col("status").cast(StringType())) \
+        .withColumn("source", col("source").cast(StringType())) \
+        .withColumn("table_name", col("table_name").cast(StringType())) \
+        .withColumn("error_msg", col("error_msg").cast(StringType())) \
+        .withColumn("etl_date", col("etl_date").cast(TimestampType()))
