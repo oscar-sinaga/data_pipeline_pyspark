@@ -3,12 +3,20 @@ from pyspark.sql.functions import col, lit, concat_ws, when
 from datetime import datetime
 
 from src.warehouse.load.handle_error import handle_error
-from src.utils.log import etl_log
+from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql.functions import col, lit, when
+from datetime import datetime
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StringType
 
-def transform_dim_people_spark(data: SparkDataFrame, table_name: str) -> SparkDataFrame:
+from src.warehouse.load.handle_error import handle_error
+from src.utils.log import etl_log_pyspark
+
+def transform_dim_people_spark(spark:SparkSession, data: SparkDataFrame, table_name: str) -> SparkDataFrame:
     """
     Transform staging data before loading to the warehouse area (PySpark version).
     """
+    current_timestamp  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         process = "transformation"
 
@@ -39,29 +47,24 @@ def transform_dim_people_spark(data: SparkDataFrame, table_name: str) -> SparkDa
         # Cast people_nk to int
         data = data.withColumn('people_nk', col('people_nk').cast('int'))
 
-        log_msg = {
-            "step": "warehouse",
-            "process": process,
-            "status": "success",
-            "source": "staging",
-            "table_name": table_name,
-            "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+        # Step 4: Buat log extraction sukses
+        log_msg = spark.sparkContext.parallelize([(
+        "warehouse", process, "success", "staging", table_name, current_timestamp
+        )]).toDF(["step", "process", "status", "source", "table_name", "etl_date"])
+
+        # Tambah kolom error_msg bernilai NULL
+        log_msg = log_msg.withColumn("error_msg", lit(None).cast(StringType()))
 
         return data
 
     except Exception as e:
         print(e)
-        log_msg = {
-            "step": "warehouse",
-            "process": process,
-            "status": "failed",
-            "source": "staging",
-            "table_name": table_name,
-            "etl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "error_msg": str(e)
-        }
+        # print("ETL transformation failed:", str(e))
 
+        # Logging gagal
+        log_msg = spark.sparkContext.parallelize([(
+            "warehouse", process, "failed", "staging", table_name, current_timestamp, str(e)
+        )]).toDF(["step", "process", "status", "source", "table_name", "etl_date", "error_msg"])
         # Handling error
         try:
             handle_error(data=data, table_name=table_name, process=process)
@@ -69,4 +72,5 @@ def transform_dim_people_spark(data: SparkDataFrame, table_name: str) -> SparkDa
             print(e)
 
     finally:
-        etl_log(log_msg)
+        log_msg.show()
+        etl_log_pyspark(spark,log_msg)
