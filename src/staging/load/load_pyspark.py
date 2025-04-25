@@ -46,7 +46,7 @@ def load_staging_pyspark_upsert(spark: SparkSession, data, schema: str, table_na
 
         # Step 4: Buat log load sukses
         log_msg = spark.sparkContext.parallelize([(
-        "staging", "load", "success", "database", table_name, current_timestamp
+        "staging", "load", "success", source, table_name, current_timestamp
         )]).toDF(["step", "process", "status", "source", "table_name", "etl_date"])
 
         # Tambah kolom error_msg bernilai NULL
@@ -55,7 +55,7 @@ def load_staging_pyspark_upsert(spark: SparkSession, data, schema: str, table_na
     except Exception as e:
         # Logging gagal
         log_msg = spark.sparkContext.parallelize([(
-            "staging", "load", "failed", "database", table_name, current_timestamp, str(e)
+            "staging", "load", "failed", source, table_name, current_timestamp, str(e)
         )]).toDF(["step", "process", "status", "source", "table_name", "etl_date", "error_msg"])
 
         print(f"Load failed: {e}")

@@ -71,7 +71,7 @@ def extract_spreadsheet(spark: SparkSession,table_name: str):
         if table_name=='people':
             df_data = extract_sheet_spark(spark,table_name = table_name)
             # Tambahkan kolom created_at dengan timestamp sekarang
-            df_data = df_data.withColumn("created_at", lit(current_timestamp))
+            df_data = df_data.withColumn("created_at", lit(current_timestamp).cast("timestamp"))
 
         elif table_name=='relationships':
             # Get date from previous process
@@ -90,15 +90,15 @@ def extract_spreadsheet(spark: SparkSession,table_name: str):
             else:
                 etl_date = etl_date_df.first()[0].strftime('%Y-%m-%d %H:%M:%S')
             
-                # Ubah string ke timestamp Spark (tanpa Pandas)
-                etl_date = lit(etl_date).cast("timestamp")
+            # Ubah string ke timestamp Spark (tanpa Pandas)
+            etl_date = lit(etl_date).cast("timestamp")
 
-                # Load dan konversi kolom created_at ke timestamp
-                df_data = extract_sheet_spark(spark, table_name=table_name)
-                df_data = df_data.withColumn("created_at", col("created_at").cast("timestamp"))
+            # Load dan konversi kolom created_at ke timestamp
+            df_data = extract_sheet_spark(spark, table_name=table_name)
+            df_data = df_data.withColumn("created_at", col("created_at").cast("timestamp"))
 
-                # Filter hanya data baru
-                df_data = df_data.filter(col("created_at") > etl_date)
+            # Filter hanya data baru
+            df_data = df_data.filter(col("created_at") > etl_date)
         
         # Step 4: Buat log extraction sukses
         log_msg = spark.sparkContext.parallelize([(
