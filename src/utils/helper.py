@@ -74,6 +74,10 @@ def log_engine_pyspark():
 def wh_engine():
     return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_WH}/{DB_NAME_WH}")
 
+def wh_engine_pyspark():
+    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT_WH}/{DB_NAME_WH}"
+    return DB_URL, DB_USER, DB_PASS
+
 def read_sql(PATH, table_name):
     #open your file .sql
     with open(f"{PATH}/{table_name}.sql", 'r') as file:
@@ -95,3 +99,33 @@ def extract_target(table_name: str):
     df = pd.read_sql(sql=query, con=conn)
     
     return df
+
+def extract_target_pyspark(spark:SparkSession, table_name: str):
+    """
+    this function is used to extract data from the data warehouse.
+    """
+    # Get DB connection config
+    DB_URL, DB_USER, DB_PASS = wh_engine_pyspark()
+    connection_properties = {
+        "user": DB_USER,
+        "password": DB_PASS,
+        "driver": "org.postgresql.Driver"
+    }
+    # Step 3: Load data dari database PostgreSQL
+    df = spark.read.jdbc(
+        url=DB_URL,
+        table=table_name,
+        properties=connection_properties
+        )
+    
+    return df
+
+
+# Fungsi untuk memverifikasi atau mengonversi string menjadi UUID
+def validate_uuid(uuid_string):
+    import uuid
+    try:
+        uuid.UUID(uuid_string)  # Cek apakah string bisa menjadi UUID valid
+        return uuid_string
+    except ValueError:
+        return None  # Mengembalikan None jika string tidak valid sebagai UUID
