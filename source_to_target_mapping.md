@@ -52,7 +52,7 @@
 
 | Source Column           | Source Type | Target Column         | Target Type     | Description                                 |
 |------------------------|-------------|------------------------|------------------|---------------------------------------------|
-| funding_round_id       | int     | funding_round_id       | int          | Direct Mapping                                 |
+| funding_round_id       | int     | funding_round_nk       | int          | Direct Mapping                                 |
 | object_id              | varchar (255)    | company_nk             | varchar (255)          | FK to dim_company                           |
 | funded_at              | date        | funded_at              | int              | Formatted to YYYYMMDD and FK to dim_date.date_key |
 | funding_round_type     | varchar (255)        | funding_round_type     | varchar (255)             | Direct Mapping                              |
