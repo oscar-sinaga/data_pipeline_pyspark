@@ -22,7 +22,7 @@ def transform_dim_people_spark(spark:SparkSession, data: SparkDataFrame, table_n
 
         # Select necessary columns
         columns_to_picked = [
-            'people_id', 
+            'object_id', 
             'first_name',
             'last_name',
             'affiliation_name',
@@ -34,7 +34,7 @@ def transform_dim_people_spark(spark:SparkSession, data: SparkDataFrame, table_n
         data = data.withColumn('full_name', concat_ws(' ', col('first_name'), col('last_name')))
 
         # Rename columns
-        data = data.withColumnRenamed('people_id', 'people_nk') \
+        data = data.withColumnRenamed('object_id', 'people_nk') \
                    .withColumnRenamed('affiliation_name', 'affiliation')
 
         # Deduplicate based on people_nk
@@ -43,9 +43,6 @@ def transform_dim_people_spark(spark:SparkSession, data: SparkDataFrame, table_n
         # Fill nulls
         data = data.withColumn('affiliation', when(col('affiliation').isNull(), lit('Unknown')).otherwise(col('affiliation')))
         data = data.withColumn('birthplace', when(col('birthplace').isNull(), lit('Unknown')).otherwise(col('birthplace')))
-
-        # Cast people_nk to int
-        data = data.withColumn('people_nk', col('people_nk').cast('int'))
 
         # Step 4: Buat log extraction sukses
         log_msg = spark.sparkContext.parallelize([(

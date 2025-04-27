@@ -1,7 +1,7 @@
 from datetime import datetime
 from pyspark.sql import SparkSession, DataFrame as SparkDataFrame
 from pyspark.sql.functions import col, lit
-from pyspark.sql.types import IntegerType, StringType
+from pyspark.sql.types import IntegerType, StringType, LongType
 
 from src.warehouse.load.handle_error import handle_error
 from src.utils.helper import extract_target_pyspark
@@ -37,7 +37,7 @@ def transform_fact_investments_spark(spark: SparkSession, data: SparkDataFrame, 
 
         # Convert data types
         data = data \
-            .withColumn('investment_nk', col('investment_nk').cast(IntegerType())) \
+            .withColumn('investment_nk', col('investment_nk').cast(LongType())) \
             .withColumn('funding_round_nk', col('funding_round_nk').cast(IntegerType()))
 
         # Lookup `funding_round_id` from `fact_funding_rounds`

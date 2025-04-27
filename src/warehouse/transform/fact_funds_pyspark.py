@@ -1,7 +1,7 @@
 from datetime import datetime
 from pyspark.sql import SparkSession, DataFrame as SparkDataFrame
 from pyspark.sql.functions import col, to_date, when, lit, coalesce, date_format
-from pyspark.sql.types import StringType, IntegerType
+from pyspark.sql.types import StringType, IntegerType , LongType
 
 from src.warehouse.load.handle_error import handle_error
 from src.utils.helper import extract_target_pyspark
@@ -35,6 +35,10 @@ def transform_fact_funds_spark(spark: SparkSession, data: SparkDataFrame, table_
 
         # Deduplication
         data = data.dropDuplicates(['fund_nk'])
+
+        # Cast nk columns
+        data = data \
+            .withColumn('fund_nk', col('fund_nk').cast(LongType()))
 
         # Handle nulls and date formatting
         data = data \

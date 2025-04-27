@@ -1,6 +1,6 @@
 from datetime import datetime
 from pyspark.sql.functions import to_date, col, when, lit, coalesce, date_format
-from pyspark.sql.types import StringType, IntegerType
+from pyspark.sql.types import StringType, IntegerType, LongType
 from src.warehouse.load.handle_error import handle_error
 from src.utils.helper import extract_target_pyspark
 from src.utils.log import etl_log_pyspark
@@ -34,6 +34,10 @@ def transform_fact_acquisitions_spark(spark: SparkSession, data: SparkDataFrame,
 
         # Deduplicate
         data = data.dropDuplicates(['acquisition_nk'])
+
+        # Cast nk columns
+        data = data \
+            .withColumn('acquisition_nk', col('acquisition_nk').cast(LongType()))
 
         # Fill NA and cast types
         data = data \

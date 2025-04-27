@@ -1,7 +1,7 @@
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, lit, when, to_date, date_format
-from pyspark.sql.types import StringType, IntegerType
+from pyspark.sql.types import StringType, IntegerType, LongType
 from datetime import datetime
 from pyspark.sql.functions import to_timestamp
 from src.warehouse.load.handle_error import handle_error
@@ -40,11 +40,26 @@ def transform_dim_relationship_spark(spark: SparkSession, data: SparkDataFrame, 
         # Deduplicate
         data = data.dropDuplicates(["relationship_nk"])
 
+        # Cast column
+        data = data.withColumn('relationship_nk', col('relationship_nk').cast(LongType()))
+        data = data.withColumn('relationship_status', col('relationship_status').cast(StringType()))
+        data = data.withColumn('relationship_order', col('relationship_order').cast(IntegerType()))
+
+
+        data = data.withColumn(
+            'relationship_status',
+            when(col('relationship_status').isNull(), lit('Unknown'))
+            .when(col('relationship_status') == 'TRUE', 'Past')
+            .when(col('relationship_status') == 'FALSE', 'Current')
+            .otherwise(col('relationship_status'))  # selain kondisi di atas, tetap isi awalnya
+        )
+            
+
         # Fill NULLs
         data = data.withColumn("title", when(col("title").isNull(), lit("Unknown")).otherwise(col("title")))
         data = data.withColumn("relationship_status", when(col("relationship_status").isNull(), lit("Unknown")).otherwise(col("relationship_status")))
         data = data.withColumn("relationship_order", when(col("relationship_order").isNull(), lit(0)).otherwise(col("relationship_order")))
-
+        
         # Convert start_at and end_at to int date format (yyyyMMdd), null jadi 21000101
         for col_name in ['start_at', 'end_at']:
             data = data.withColumn(

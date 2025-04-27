@@ -1,7 +1,7 @@
 from datetime import datetime
 from pyspark.sql import SparkSession, DataFrame as SparkDataFrame
 from pyspark.sql.functions import col, to_date, when, lit, coalesce, date_format
-from pyspark.sql.types import StringType, IntegerType
+from pyspark.sql.types import StringType, IntegerType, LongType
 
 from src.warehouse.load.handle_error import handle_error
 from src.utils.helper import extract_target_pyspark
@@ -34,6 +34,10 @@ def transform_fact_milestones_spark(spark: SparkSession, data: SparkDataFrame, t
         # Deduplicate
         data = data.dropDuplicates(['milestone_nk'])
 
+        # Convert data types
+        data = data \
+            .withColumn('milestone_nk', col('milestone_nk').cast(LongType()))
+        
         # Handle nulls and date conversion
         data = data \
             .withColumn('milestone_at', to_date(col('milestone_at'))) \

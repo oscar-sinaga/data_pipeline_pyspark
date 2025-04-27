@@ -1,7 +1,7 @@
 from datetime import datetime
 from pyspark.sql import SparkSession, DataFrame as SparkDataFrame
 from pyspark.sql.functions import col, to_date, when, lit, coalesce, date_format
-from pyspark.sql.types import StringType, IntegerType
+from pyspark.sql.types import StringType, IntegerType,LongType
 
 from src.warehouse.load.handle_error import handle_error
 from src.utils.helper import extract_target_pyspark
@@ -37,6 +37,10 @@ def transform_fact_ipos_spark(spark: SparkSession, data: SparkDataFrame, table_n
         # Deduplicate
         data = data.dropDuplicates(['ipo_nk'])
 
+        # Cast nk columns
+        data = data \
+            .withColumn('ipo_nk', col('ipo_nk').cast(LongType()))
+        
         # Handle nulls and format date
         data = data \
             .withColumn('public_at', to_date(col('public_at'))) \

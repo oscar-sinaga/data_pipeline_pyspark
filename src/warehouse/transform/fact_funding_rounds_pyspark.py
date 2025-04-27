@@ -1,16 +1,17 @@
 from datetime import datetime
-from pyspark.sql.functions import to_date, col, when, lit, coalesce, date_format,udf
-from pyspark.sql.types import StringType, IntegerType
+from pyspark.sql.functions import to_date, col, when, lit, coalesce, date_format
+from pyspark.sql.types import StringType, IntegerType, LongType
 from pyspark.sql import SparkSession, DataFrame as SparkDataFrame
 
 from src.warehouse.load.handle_error import handle_error
-from src.utils.helper import extract_target_pyspark,validate_uuid
+from src.utils.helper import extract_target_pyspark
 from src.utils.log import etl_log_pyspark
 
 def transform_fact_funding_rounds_spark(spark: SparkSession, data: SparkDataFrame, table_name: str) -> SparkDataFrame:
     """
     Transform funding rounds fact data using PySpark before loading to the data warehouse.
     """
+    # Current_timestamp
     current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         process = "transformation"
@@ -47,6 +48,10 @@ def transform_fact_funding_rounds_spark(spark: SparkSession, data: SparkDataFram
         # Deduplication
         data = data.dropDuplicates(['funding_round_nk'])
 
+        # Cast nk columns
+        data = data \
+            .withColumn('funding_round_nk', col('funding_round_nk').cast(LongType()))
+
         # Fill nulls and cast
         data = data \
             .withColumn('funded_at', to_date(col('funded_at'))) \
@@ -63,13 +68,6 @@ def transform_fact_funding_rounds_spark(spark: SparkSession, data: SparkDataFram
         # Drop natural key
         data = data.drop("company_nk")
         
-        # Register fungsi UDF
-        validate_uuid_udf = udf(validate_uuid, StringType())
-
-        # Terapkan konversi pada kolom 'company_id'
-        data = data.withColumn(
-            "company_id", validate_uuid_udf(col("company_id"))
-        )
         # Logging success
         log_msg = spark.sparkContext.parallelize([(
             "warehouse", process, "success", "staging", table_name, current_timestamp
@@ -91,3 +89,4 @@ def transform_fact_funding_rounds_spark(spark: SparkSession, data: SparkDataFram
     finally:
         log_msg.show()
         etl_log_pyspark(spark, log_msg)
+
