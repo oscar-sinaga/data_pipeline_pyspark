@@ -37,9 +37,10 @@ CREATE TABLE dim_date (
 
 
 CREATE TABLE dim_company (
-    company_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id BIGSERIAL PRIMARY KEY ,
     company_nk VARCHAR(255) UNIQUE,
     description TEXT,
+    region VARCHAR(255),
     city VARCHAR(255),
     state_code VARCHAR(255),
     country_code VARCHAR(255),
@@ -50,8 +51,8 @@ CREATE TABLE dim_company (
 
 
 CREATE TABLE dim_people (
-    people_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    people_nk INTEGER UNIQUE,
+    people_id BIGSERIAL PRIMARY KEY ,
+    people_nk VARCHAR(255) UNIQUE,
     full_name VARCHAR(255),
     first_name VARCHAR(255),
     last_name VARCHAR(255),
@@ -60,21 +61,21 @@ CREATE TABLE dim_people (
     created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE dim_relationship (
-    relationship_id INTEGER PRIMARY KEY,
-    people_id INTEGER,
-    company_id VARCHAR(255),
+CREATE TABLE dim_relationships (
+    relationship_id BIGSERIAL PRIMARY KEY ,
+    relationship_nk BIGINT UNIQUE,
+    people_id BIGINT,
+    company_id BIGINT,
     title TEXT,
     start_at INTEGER,
     end_at INTEGER,
     relationship_status VARCHAR(255),
     relationship_order INT,
-    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP
-    updated_at INTEGER,
-    FOREIGN KEY (person_id) REFERENCES dim_people(person_id),
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (people_id) REFERENCES dim_people(people_id),
     FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (start_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (end_at) REFERENCES dim_datetime(datetime_key),
+    FOREIGN KEY (start_at) REFERENCES dim_date(date_id),
+    FOREIGN KEY (end_at) REFERENCES dim_date(date_id)
 
 );
 
@@ -83,10 +84,10 @@ CREATE TABLE dim_relationship (
 -- =========================
 
 CREATE TABLE fact_funding_rounds (
-    funding_round_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    funding_round_nk INTEGER UNIQUE,
+    funding_round_id BIGSERIAL PRIMARY KEY,
+    funding_round_nk BIGINT UNIQUE,
     funded_at INTEGER,
-    company_id UUID,  -- ✅ tipe disamakan dengan dim_company
+    company_id BIGINT,  -- ✅ tipe disamakan dengan dim_company
     funding_round_type VARCHAR(255),
     funding_round_code VARCHAR(255),
     raised_amount_usd NUMERIC(15,2),
@@ -100,80 +101,70 @@ CREATE TABLE fact_funding_rounds (
 );
 
 CREATE TABLE fact_acquisitions (
-    acquisition_id INT PRIMARY KEY,
-    acquiring_company_id VARCHAR(255),
-    acquired_company_id VARCHAR(255),
+    acquisition_id BIGSERIAL PRIMARY KEY,
+    acquisition_nk BIGINT UNIQUE,
+    acquiring_company_id BIGINT,
+    acquired_company_id BIGINT,
     acquired_at INTEGER,
     price_amount NUMERIC,
     price_currency_code VARCHAR(255),
     term_code VARCHAR(255),
-    created_at INTEGER,
-    updated_at INTEGER,
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (acquiring_company_id) REFERENCES dim_company(company_id),
     FOREIGN KEY (acquired_company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (acquired_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+    FOREIGN KEY (acquired_at) REFERENCES dim_date(date_id)
 );
 
 CREATE TABLE fact_ipos (
-    ipo_id VARCHAR(255) PRIMARY KEY,
-    company_id VARCHAR(255),
+    ipo_id BIGSERIAL PRIMARY KEY,
+    ipo_nk BIGINT UNIQUE,
+    company_id BIGINT,
     public_at INTEGER,
     valuation_amount NUMERIC,
     raised_amount NUMERIC,
     valuation_currency_code VARCHAR(255),
     raised_currency_code VARCHAR(255),
     stock_symbol VARCHAR(255),
-    created_at INTEGER,
-    updated_at INTEGER,
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,    
     FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (public_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+    FOREIGN KEY (public_at) REFERENCES dim_date(date_id)
 );
 
 CREATE TABLE fact_funds (
-    fund_id VARCHAR(255) PRIMARY KEY,
-    company_id VARCHAR(255),
+    fund_id BIGSERIAL PRIMARY KEY,
+    fund_nk BIGINT UNIQUE,
+    company_id BIGINT,
     funded_at INTEGER,
     fund_name VARCHAR(255),
     raised_amount NUMERIC,
-    currency_code VARCHAR(255),
-    created_at INTEGER,
-    updated_at INTEGER,
+    raised_currency_code VARCHAR(255),
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (funded_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+    FOREIGN KEY (funded_at) REFERENCES dim_date(date_id)
 );
 
 CREATE TABLE fact_investments (
-    investment_id INT PRIMARY KEY,
-    funding_round_id INT,
-    investor_company_id VARCHAR(255),
-    investee_company_id VARCHAR(255),
-    created_at INTEGER,
-    updated_at INTEGER,
+    investment_id BIGSERIAL PRIMARY KEY,
+    investment_nk BIGINT UNIQUE,
+    funding_round_id BIGINT,
+    investor_company_id BIGINT,
+    investee_company_id BIGINT,
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (funding_round_id) REFERENCES fact_funding_rounds(funding_round_id),
     FOREIGN KEY (investor_company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (investee_company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+    FOREIGN KEY (investee_company_id) REFERENCES dim_company(company_id)
 );
 
 CREATE TABLE fact_milestones (
-    milestone_id VARCHAR(255) PRIMARY KEY,
-    company_id VARCHAR(255),
+    milestone_id BIGSERIAL PRIMARY KEY,
+    milestone_nk BIGINT UNIQUE,
+    company_id BIGINT,
     milestone_at INTEGER,
     description TEXT,
     milestone_code VARCHAR(255),
-    created_at INTEGER,
-    updated_at INTEGER,
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (milestone_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (created_at) REFERENCES dim_datetime(datetime_key),
-    FOREIGN KEY (updated_at) REFERENCES dim_datetime(datetime_key)
+    FOREIGN KEY (milestone_at) REFERENCES dim_date(date_id)
 );
 
 
@@ -214,3 +205,4 @@ FROM generate_series(
     DATE '2100-12-31',
     INTERVAL '1 day'
 ) AS g(d);
+
