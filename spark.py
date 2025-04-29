@@ -5,7 +5,7 @@
 # # dan kamu ingin import dari 'data_pipeline_pyspark/src'
 # project_root = Path.cwd().parent
 # sys.path.append(str(project_root))
-import pandas as pd
+import pandas as pds
 
 from src.utils.helper import startup_investments_engine_pyspark
 
