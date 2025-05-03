@@ -43,8 +43,8 @@ def transform_fact_milestones_spark(spark: SparkSession, data: SparkDataFrame, t
             .withColumn('milestone_at', to_date(col('milestone_at'))) \
             .withColumn('milestone_at', when(col('milestone_at').isNull(), lit("2100-01-01")).otherwise(col('milestone_at'))) \
             .withColumn('milestone_at', date_format(col('milestone_at'), 'yyyyMMdd').cast(IntegerType())) \
-            .withColumn('description', coalesce(col('description'), lit("N/A"))) \
-            .withColumn('milestone_code', coalesce(col('milestone_code'), lit("N/A")))
+            # .withColumn('description', coalesce(col('description'), lit("N/A"))) \
+            # .withColumn('milestone_code', coalesce(col('milestone_code'), lit("N/A")))
 
         # Lookup dim_company to get company_id
         dim_company = extract_target_pyspark(spark, "dim_company").select("company_nk", "company_id")

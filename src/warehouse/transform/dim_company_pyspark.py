@@ -37,14 +37,14 @@ def transform_dim_company_spark(spark:SparkSession, data: SparkDataFrame, table_
         # Deduplicate based on company_nk
         data = data.dropDuplicates(['company_nk'])
 
-        # Fill null values (set default values)
-        data = data.withColumn('description', when(col('description').isNull(), lit('No Description')).otherwise(col('description')))
-        data = data.withColumn('region', when(col('region').isNull(), lit('Unknown')).otherwise(col('region')))
-        data = data.withColumn('city', when(col('city').isNull(), lit('Unknown')).otherwise(col('city')))
-        data = data.withColumn('state_code', when(col('state_code').isNull(), lit('N/A')).otherwise(col('state_code')))
-        data = data.withColumn('country_code', when(col('country_code').isNull(), lit('N/A')).otherwise(col('country_code')))
-        data = data.withColumn('latitude', when(col('latitude').isNull(), lit(999)).otherwise(col('latitude')))
-        data = data.withColumn('longitude', when(col('longitude').isNull(), lit(999)).otherwise(col('longitude')))
+        # # Fill null values (set default values)
+        # data = data.withColumn('description', when(col('description').isNull(), lit('No Description')).otherwise(col('description')))
+        # data = data.withColumn('region', when(col('region').isNull(), lit('Unknown')).otherwise(col('region')))
+        # data = data.withColumn('city', when(col('city').isNull(), lit('Unknown')).otherwise(col('city')))
+        # data = data.withColumn('state_code', when(col('state_code').isNull(), lit('N/A')).otherwise(col('state_code')))
+        # data = data.withColumn('country_code', when(col('country_code').isNull(), lit('N/A')).otherwise(col('country_code')))
+        # data = data.withColumn('latitude', when(col('latitude').isNull(), lit(999)).otherwise(col('latitude')))
+        # data = data.withColumn('longitude', when(col('longitude').isNull(), lit(999)).otherwise(col('longitude')))
 
         # Step 4: Buat log extraction sukses
         log_msg = spark.sparkContext.parallelize([(

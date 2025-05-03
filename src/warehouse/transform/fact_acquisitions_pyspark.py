@@ -44,9 +44,9 @@ def transform_fact_acquisitions_spark(spark: SparkSession, data: SparkDataFrame,
                     .withColumn('acquired_at', to_date(col('acquired_at'))) \
                     .withColumn('acquired_at', when(col('acquired_at').isNull(), lit("2100-01-01")).otherwise(col('acquired_at'))) \
                     .withColumn('acquired_at', date_format(col('acquired_at'), 'yyyyMMdd').cast(IntegerType())) \
-                    .withColumn('term_code', coalesce(col('term_code'), lit('Unknown'))) \
-                    .withColumn('price_currency_code', coalesce(col('price_currency_code'), lit('N/A'))) \
-                    .withColumn('price_amount', coalesce(col('price_amount'), lit(0)))
+                    # .withColumn('term_code', coalesce(col('term_code'), lit('Unknown'))) \
+                    # .withColumn('price_currency_code', coalesce(col('price_currency_code'), lit('N/A'))) \
+                    # .withColumn('price_amount', coalesce(col('price_amount'), lit(0)))
                     
         # Load dimension company for ID lookups
         dim_company = extract_target_pyspark(spark, "dim_company")

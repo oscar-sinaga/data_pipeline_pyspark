@@ -55,10 +55,10 @@ def transform_dim_relationship_spark(spark: SparkSession, data: SparkDataFrame, 
         )
             
 
-        # Fill NULLs
-        data = data.withColumn("title", when(col("title").isNull(), lit("Unknown")).otherwise(col("title")))
-        data = data.withColumn("relationship_status", when(col("relationship_status").isNull(), lit("Unknown")).otherwise(col("relationship_status")))
-        data = data.withColumn("relationship_order", when(col("relationship_order").isNull(), lit(0)).otherwise(col("relationship_order")))
+        # # Fill NULLs
+        # data = data.withColumn("title", when(col("title").isNull(), lit("Unknown")).otherwise(col("title")))
+        # data = data.withColumn("relationship_status", when(col("relationship_status").isNull(), lit("Unknown")).otherwise(col("relationship_status")))
+        # data = data.withColumn("relationship_order", when(col("relationship_order").isNull(), lit(0)).otherwise(col("relationship_order")))
         
         # Convert start_at and end_at to int date format (yyyyMMdd), null jadi 21000101
         for col_name in ['start_at', 'end_at']:

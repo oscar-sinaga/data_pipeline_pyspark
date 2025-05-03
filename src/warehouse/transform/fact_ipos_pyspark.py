@@ -46,11 +46,11 @@ def transform_fact_ipos_spark(spark: SparkSession, data: SparkDataFrame, table_n
             .withColumn('public_at', to_date(col('public_at'))) \
             .withColumn('public_at', when(col('public_at').isNull(), lit("2100-01-01")).otherwise(col('public_at'))) \
             .withColumn('public_at', date_format(col('public_at'), 'yyyyMMdd').cast(IntegerType())) \
-            .withColumn('valuation_amount', coalesce(col('valuation_amount'), lit(0))) \
-            .withColumn('raised_amount', coalesce(col('raised_amount'), lit(0))) \
-            .withColumn('valuation_currency_code', coalesce(col('valuation_currency_code'), lit("N/A"))) \
-            .withColumn('raised_currency_code', coalesce(col('raised_currency_code'), lit("N/A"))) \
-            .withColumn('stock_symbol', coalesce(col('stock_symbol'), lit("N/A")))
+            # .withColumn('valuation_amount', coalesce(col('valuation_amount'), lit(0))) \
+            # .withColumn('raised_amount', coalesce(col('raised_amount'), lit(0))) \
+            # .withColumn('valuation_currency_code', coalesce(col('valuation_currency_code'), lit("N/A"))) \
+            # .withColumn('raised_currency_code', coalesce(col('raised_currency_code'), lit("N/A"))) \
+            # .withColumn('stock_symbol', coalesce(col('stock_symbol'), lit("N/A")))
 
         # Lookup dim_company to get company_id
         dim_company = extract_target_pyspark(spark, "dim_company").select("company_nk", "company_id")

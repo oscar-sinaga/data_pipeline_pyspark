@@ -40,9 +40,9 @@ def transform_dim_people_spark(spark:SparkSession, data: SparkDataFrame, table_n
         # Deduplicate based on people_nk
         data = data.dropDuplicates(['people_nk'])
 
-        # Fill nulls
-        data = data.withColumn('affiliation', when(col('affiliation').isNull(), lit('Unknown')).otherwise(col('affiliation')))
-        data = data.withColumn('birthplace', when(col('birthplace').isNull(), lit('Unknown')).otherwise(col('birthplace')))
+        # # Fill nulls
+        # data = data.withColumn('affiliation', when(col('affiliation').isNull(), lit('Unknown')).otherwise(col('affiliation')))
+        # data = data.withColumn('birthplace', when(col('birthplace').isNull(), lit('Unknown')).otherwise(col('birthplace')))
 
         # Step 4: Buat log extraction sukses
         log_msg = spark.sparkContext.parallelize([(

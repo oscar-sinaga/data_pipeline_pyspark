@@ -57,9 +57,9 @@ def transform_fact_funding_rounds_spark(spark: SparkSession, data: SparkDataFram
             .withColumn('funded_at', to_date(col('funded_at'))) \
             .withColumn('funded_at', when(col('funded_at').isNull(), lit("2100-01-01")).otherwise(col('funded_at'))) \
             .withColumn('funded_at', date_format(col('funded_at'), 'yyyyMMdd').cast(IntegerType())) \
-            .withColumn('raised_amount_usd', coalesce(col('raised_amount_usd'), lit(0))) \
-            .withColumn('pre_money_valuation_usd', coalesce(col('pre_money_valuation_usd'), lit(0))) \
-            .withColumn('post_money_valuation_usd', coalesce(col('post_money_valuation_usd'), lit(0)))
+            # .withColumn('raised_amount_usd', coalesce(col('raised_amount_usd'), lit(0))) \
+            # .withColumn('pre_money_valuation_usd', coalesce(col('pre_money_valuation_usd'), lit(0))) \
+            # .withColumn('post_money_valuation_usd', coalesce(col('post_money_valuation_usd'), lit(0)))
 
         # Lookup company_id
         dim_company = extract_target_pyspark(spark, "dim_company").select("company_nk", "company_id")

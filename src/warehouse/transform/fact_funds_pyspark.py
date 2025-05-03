@@ -45,8 +45,8 @@ def transform_fact_funds_spark(spark: SparkSession, data: SparkDataFrame, table_
             .withColumn('funded_at', to_date(col('funded_at'))) \
             .withColumn('funded_at', when(col('funded_at').isNull(), lit("2100-01-01")).otherwise(col('funded_at'))) \
             .withColumn('funded_at', date_format(col('funded_at'), 'yyyyMMdd').cast(IntegerType())) \
-            .withColumn('raised_amount', coalesce(col('raised_amount'), lit(0))) \
-            .withColumn('raised_currency_code', coalesce(col('raised_currency_code'), lit("N/A")))
+            # .withColumn('raised_amount', coalesce(col('raised_amount'), lit(0))) \
+            # .withColumn('raised_currency_code', coalesce(col('raised_currency_code'), lit("N/A")))
 
         # Lookup company_id from dim_company
         dim_company = extract_target_pyspark(spark, "dim_company").select("company_nk", "company_id")
