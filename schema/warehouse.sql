@@ -100,7 +100,7 @@ CREATE TABLE fact_funding_rounds (
     FOREIGN KEY (company_id) REFERENCES dim_company(company_id)
 );
 
-CREATE TABLE fact_acquisitions (
+CREATE TABLE fact_acquisition (
     acquisition_id BIGSERIAL PRIMARY KEY,
     acquisition_nk BIGINT UNIQUE,
     acquiring_company_id BIGINT,
