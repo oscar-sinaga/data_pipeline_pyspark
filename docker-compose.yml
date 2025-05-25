@@ -1,0 +1,129 @@
+services:
+  minio:
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    container_name: minio
+    hostname: minio
+    restart: always
+    volumes:
+      - ./minio-data/minio:/data
+    ports:
+      - 6000:9000
+      - 6001:9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - my_network
+      
+  source_db:
+    image: postgres:latest
+    hostname: source_db
+    container_name: source_startup_container
+    restart: on-failure
+    environment:
+      - POSTGRES_DB=startup_investments
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=cobapassword
+    volumes:
+      - ./source_data/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5000:5432 
+    networks:
+      - my_network
+
+  pipeline_db:
+    image: postgres:latest
+    hostname: pipeline_db
+    container_name: target_db_container
+    restart: on-failure
+    environment:
+      - POSTGRES_DB=warehouse
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=cobapassword
+    volumes:
+      - postgres_data_spark:/var/lib/postgresql/data      # For data persistence
+      - ./target_db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./target_db/etl_log.sql:/docker-entrypoint-initdb.d/02-etl_log.sql
+      - ./target_db/warehouse.sql:/docker-entrypoint-initdb.d/03-warehouse.sql
+    ports:
+      - 5001:5432 
+    networks:
+      - my_network
+      
+  spark-master:
+    build: ./ 
+    image: spark_master_custom
+    # image: bitnami/spark:3.4.3
+    container_name: spark-master
+    hostname: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "6060:8080"     # Spark Master UI
+      - "6066:7077"     # Spark Master port
+      - "5000:8888"     # Jupyter Lab UI
+    volumes:
+      - ../data_pipeline_pyspark:/app
+    networks:
+      - my_network
+
+  spark-worker-1:
+    image: bitnami/spark:3.4.3
+    container_name: spark-worker-1
+    hostname: spark-worker-1
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=3
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "6061:8081"     # Spark Worker 1 UI
+    networks:
+      - my_network
+    depends_on:
+      - spark-master
+
+  spark-worker-2:
+    image: bitnami/spark:3.4.3
+    container_name: spark-worker-2
+    hostname: spark-worker-2
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=3
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "6062:8081"     # Spark Worker 2 UI
+    networks:
+      - my_network
+    depends_on:
+      - spark-master
+
+networks:
+  my_network:
+    external: true
+    name: shared_network
+
+volumes:
+  postgres_data_spark:       # definisi volume named
+
+  
