@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from minio import Minio
 from io import BytesIO
 import json
@@ -6,7 +6,7 @@ from src.utils.helper import ACCESS_KEY_MINIO,SECRET_KEY_MINIO,MINIO_PORT,MINIO_
 from pyspark.sql.functions import col
 from pyspark.sql import DataFrame as SparkDataFrame
 
-bucket_name = "validation-clinic"
+bucket_name = "validation-spark"
 
 def save_report(data, table_name):
 
@@ -22,7 +22,7 @@ def save_report(data, table_name):
         client.make_bucket(bucket_name)
 
     # Convert dict to JSON and then to bytes
-    json_report = json.dumps(data)
+    json_report = json.dumps(data, indent=4, ensure_ascii=False)
     json_bytes = json_report.encode('utf-8')
 
     # Upload the CSV file to the bucket
@@ -64,10 +64,14 @@ def check_all_missing_except_id(df_spark: SparkDataFrame, report: dict, id_col: 
 
 def report_validation(table_name: str, df_spark: SparkDataFrame, id_col: str, date_col: list = None):
     data = {
-        "created_at": datetime.datetime.now().strftime("%Y-%m-%d"),
+        "created_at": datetime.now().strftime("%Y-%m-%d"),
         "table_name": table_name,
         "report":{}
     }
     data.update(check_all_missing_except_id(df_spark, data, id_col, date_col))
 
     save_report(data, table_name)
+
+    
+
+    

@@ -32,12 +32,15 @@ PROFILING_BUCKET_NAME = os.getenv("PROFILING_BUCKET_NAME")
 ERROR_STAGING_SI_BUCKET_NAME = os.getenv("ERROR_STAGING_SI_BUCKET_NAME")
 
 
-DB_HOST = os.getenv("DB_HOST")
+# DB_HOST = os.getenv("DB_HOST")
+DB_HOST_STARTUP_INVESTMENTS = os.getenv("DB_HOST_STARTUP_INVESTMENTS")
 DB_USER = os.getenv("DB_USER")
 DB_PORT = os.getenv("DB_PORT")
 DB_PASS = os.getenv("DB_PASS")
 
 DB_NAME_STARTUP_INVESTMENTS = os.getenv("DB_NAME_STARTUP_INVESTMENTS")
+
+DB_HOST_PIPELINE = os.getenv("DB_HOST_PIPELINE")
 DB_NAME_STG = os.getenv("DB_NAME_STG")
 DB_NAME_LOG = os.getenv("DB_NAME_LOG")
 DB_NAME_WH = os.getenv("DB_NAME_WH")
@@ -51,31 +54,31 @@ MODEL_PATH_LOG_ETL = str(BASE_DIR / MODEL_PATH_LOG_ETL)
 
 
 def startup_investments_engine():
-    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME_STARTUP_INVESTMENTS}")
+    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST_STARTUP_INVESTMENTS}:{DB_PORT}/{DB_NAME_STARTUP_INVESTMENTS}")
 
 def startup_investments_engine_pyspark():
-    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT}/{DB_NAME_STARTUP_INVESTMENTS}"
+    DB_URL = f"jdbc:postgresql://{DB_HOST_STARTUP_INVESTMENTS}:{DB_PORT}/{DB_NAME_STARTUP_INVESTMENTS}"
     return DB_URL, DB_USER, DB_PASS
 
 def stg_engine():
-    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_STG}/{DB_NAME_STG}")
+    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST_PIPELINE}:{DB_PORT_STG}/{DB_NAME_STG}")
 
 def stg_engine_pyspark():
-    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT_STG}/{DB_NAME_STG}"
+    DB_URL = f"jdbc:postgresql://{DB_HOST_PIPELINE}:{DB_PORT_STG}/{DB_NAME_STG}"
     return DB_URL, DB_USER, DB_PASS
 
 def log_engine():
-    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_LOG}/{DB_NAME_LOG}")
+    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST_PIPELINE}:{DB_PORT_LOG}/{DB_NAME_LOG}")
 
 def log_engine_pyspark():
-    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT_LOG}/{DB_NAME_LOG}"
+    DB_URL = f"jdbc:postgresql://{DB_HOST_PIPELINE}:{DB_PORT_LOG}/{DB_NAME_LOG}"
     return DB_URL, DB_USER, DB_PASS
 
 def wh_engine():
-    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT_WH}/{DB_NAME_WH}")
+    return create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST_PIPELINE}:{DB_PORT_WH}/{DB_NAME_WH}")
 
 def wh_engine_pyspark():
-    DB_URL = f"jdbc:postgresql://{DB_HOST}:{DB_PORT_WH}/{DB_NAME_WH}"
+    DB_URL = f"jdbc:postgresql://{DB_HOST_PIPELINE}:{DB_PORT_WH}/{DB_NAME_WH}"
     return DB_URL, DB_USER, DB_PASS
 
 def read_sql(PATH, table_name):
