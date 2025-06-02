@@ -9,8 +9,11 @@ RUN apt-get update && apt-get install -y curl bash && \
     pip3 install jupyterlab ipykernel
 
 # 2. Install uv binary (tanpa Rust)
-RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz | tar xz && \
-    mv uv /usr/local/bin/
+RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz \
+  | tar xz && \
+  mv uv-x86_64-unknown-linux-gnu/uv /usr/local/bin/ && \
+  rm -rf uv-x86_64-unknown-linux-gnu
+
 
 # 3. Buat user non-root 'spark' dengan uid 1001 (kalau belum ada)
 RUN useradd -m -u 1001 spark
@@ -40,31 +43,34 @@ RUN echo "c.NotebookApp.token = ''" >> /home/spark/.jupyter/jupyter_notebook_con
     chown spark:spark /home/spark/.jupyter/jupyter_notebook_config.py
 
 # 6. Set berbagai PATH dan ENV di bashrc
-# Mengatur berbagai PATH dan ENV untuk pengguna spark
-# agar dapat menjalankan perintah-perintah Spark dan Python
+# Mengatur berbagai environment variable agar user 'spark' bisa menggunakan Spark dan Jupyter secara optimal
 RUN echo 'export PS1="\u@\h:\w$ "' >> /home/spark/.bashrc && \
-    # Menambahkan path Spark bin ke PATH
+    # Menambahkan direktori bin Spark ke dalam PATH
     echo 'export PATH="/opt/bitnami/spark/bin:$PATH"' >> /home/spark/.bashrc && \
-    # Menambahkan path Python bin ke PATH
+    # Menambahkan direktori bin Python ke dalam PATH
     echo 'export PATH="/opt/bitnami/python/bin:$PATH"' >> /home/spark/.bashrc && \
-    # Mengatur HOME directory untuk pengguna spark
+    # Menetapkan direktori HOME untuk user spark
     echo 'export HOME="/home/spark"' >> /home/spark/.bashrc && \
-    # Mengatur SHELL untuk pengguna spark
+    # Menetapkan shell default sebagai bash
     echo 'export SHELL="/bin/bash"' >> /home/spark/.bashrc && \
-    # Mengatur JUPYTER_RUNTIME_DIR untuk Jupyter
+    # Mengatur lokasi runtime Jupyter agar bisa ditulis di dalam container
     echo 'export JUPYTER_RUNTIME_DIR="/tmp/jupyter_runtime"' >> /home/spark/.bashrc && \
-    # Mengatur SPARK_CONF_DIR untuk Spark
+    # Mengatur lokasi konfigurasi Spark
     echo 'export SPARK_CONF_DIR="/opt/bitnami/spark/conf"' >> /home/spark/.bashrc && \
-    # Menambahkan path Python ke PYTHONPATH
-    echo 'export PYTHONPATH="/app/src:$PYTHONPATH"' >> /home/spark/.bashrc
+    # Menambahkan direktori kode aplikasi ke PYTHONPATH
+    echo 'export PYTHONPATH="/app/src:$PYTHONPATH"' >> /home/spark/.bashrc && \
+    # Mengatur PySpark agar suppress log ke level ERROR menggunakan log4j2
+    echo 'export PYSPARK_SUBMIT_ARGS="--conf spark.driver.extraJavaOptions=-Dlog4j.configurationFile=file:/opt/bitnami/spark/conf/log4j2.properties --conf spark.executor.extraJavaOptions=-Dlog4j.configurationFile=file:/opt/bitnami/spark/conf/log4j2.properties pyspark-shell"' >> /home/spark/.bashrc
+
+
 
 # 7. Copy file konfigurasi & script
 # Menyalin file log4j.properties ke direktori Spark conf
 # agar dapat digunakan oleh Spark
-COPY configurations/log4j.properties /opt/bitnami/spark/conf/log4j.properties
+COPY configs/spark_configs/log4j2.properties /opt/bitnami/spark/conf/log4j2.properties
 # Menyalin file run-all.sh ke root directory
 # agar dapat dijalankan oleh pengguna spark
-COPY run-all.sh /run-all.sh
+COPY scripts/run-all.sh /run-all.sh
 # Mengatur izin execute untuk file run-all.sh
 RUN chmod +x /run-all.sh
 
@@ -76,7 +82,7 @@ COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 
 # 10. Install Python dependencies pakai uv
-RUN uv pip install -r requirements.txt
+RUN uv pip install --system -r requirements.txt
 
 # 11. Install ipykernel sebagai user spark
 USER spark
@@ -89,4 +95,4 @@ ENV JUPYTER_RUNTIME_DIR=/tmp/jupyter_runtime
 WORKDIR /app
 
 # 13. Jalankan JupyterLab sebagai user spark
-ENTRYPOINT ["configurations/run-all.sh"]
+ENTRYPOINT ["scripts/run-all.sh"]

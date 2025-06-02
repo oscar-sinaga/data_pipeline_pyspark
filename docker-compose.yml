@@ -3,9 +3,9 @@ services:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
     container_name: minio
     hostname: minio
-    restart: always
+    restart: always   
     volumes:
-      - ./minio-data/minio:/data
+      - ./data/minio:/data
     ports:
       - 6000:9000
       - 6001:9001
@@ -31,7 +31,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=cobapassword
     volumes:
-      - ./source_data/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data/source/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 5000:5432 
     networks:
@@ -48,9 +48,9 @@ services:
       - POSTGRES_PASSWORD=cobapassword
     volumes:
       - postgres_data_spark:/var/lib/postgresql/data      # For data persistence
-      - ./target_db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./target_db/etl_log.sql:/docker-entrypoint-initdb.d/02-etl_log.sql
-      - ./target_db/warehouse.sql:/docker-entrypoint-initdb.d/03-warehouse.sql
+      - ./data/target_db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./data/target_db/etl_log.sql:/docker-entrypoint-initdb.d/02-etl_log.sql
+      - ./data/target_db/warehouse.sql:/docker-entrypoint-initdb.d/03-warehouse.sql
     ports:
       - 5001:5432 
     networks:
@@ -72,9 +72,10 @@ services:
     ports:
       - "6060:8080"     # Spark Master UI
       - "6066:7077"     # Spark Master port
-      - "5000:8888"     # Jupyter Lab UI
+      - "7777:8888"     # Jupyter Lab UI
     volumes:
-      - ../data_pipeline_pyspark:/app
+      - .:/app
+      - ./logs:/opt/bitnami/spark/logs
     networks:
       - my_network
 
@@ -93,6 +94,8 @@ services:
       - SPARK_SSL_ENABLED=no
     ports:
       - "6061:8081"     # Spark Worker 1 UI
+    volumes:
+      - ./logs:/opt/bitnami/spark/logs
     networks:
       - my_network
     depends_on:
@@ -113,6 +116,8 @@ services:
       - SPARK_SSL_ENABLED=no
     ports:
       - "6062:8081"     # Spark Worker 2 UI
+    volumes:
+      - ./logs:/opt/bitnami/spark/logs
     networks:
       - my_network
     depends_on:
@@ -126,4 +131,4 @@ networks:
 volumes:
   postgres_data_spark:       # definisi volume named
 
-  
+
