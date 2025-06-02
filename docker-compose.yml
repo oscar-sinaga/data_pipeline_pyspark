@@ -95,7 +95,7 @@ services:
     ports:
       - "6061:8081"     # Spark Worker 1 UI
     volumes:
-      - ./logs:/opt/bitnami/spark/logs
+      - ./driver/postgresql-42.6.0.jar:/opt/bitnami/spark/jars/postgresql-42.6.0.jar
     networks:
       - my_network
     depends_on:
@@ -117,7 +117,7 @@ services:
     ports:
       - "6062:8081"     # Spark Worker 2 UI
     volumes:
-      - ./logs:/opt/bitnami/spark/logs
+      - ./driver/postgresql-42.6.0.jar:/opt/bitnami/spark/jars/postgresql-42.6.0.jar
     networks:
       - my_network
     depends_on:
