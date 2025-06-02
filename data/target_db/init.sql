@@ -1,0 +1,2 @@
+CREATE DATABASE staging;
+CREATE DATABASE etl_log;
