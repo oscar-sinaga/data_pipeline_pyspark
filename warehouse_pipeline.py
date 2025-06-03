@@ -21,6 +21,7 @@ def pipeline_warehouse():
     spark = SparkSession \
         .builder \
         .appName("Pipeline Warehouse") \
+        .config("spark.ui.showConsoleProgress", "false") \
         .master("spark://spark-master:7077") \
         .getOrCreate()
 

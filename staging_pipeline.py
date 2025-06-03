@@ -14,6 +14,7 @@ def pipeline_staging():
     spark = SparkSession \
         .builder \
         .appName("Pipeline Staging") \
+        .config("spark.ui.showConsoleProgress", "false") \
         .master("spark://spark-master:7077") \
         .getOrCreate()
 
