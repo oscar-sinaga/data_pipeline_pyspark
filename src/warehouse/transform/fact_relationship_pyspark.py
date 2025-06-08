@@ -8,7 +8,7 @@ from src.warehouse.load.handle_error import handle_error
 from src.utils.log import etl_log_pyspark
 from src.utils.helper import extract_target_pyspark  # diasumsikan kamu punya ini versi Spark
 
-def transform_dim_relationship_spark(spark: SparkSession, data: SparkDataFrame, table_name: str) -> SparkDataFrame:
+def transform_fact_relationship_spark(spark: SparkSession, data: SparkDataFrame, table_name: str) -> SparkDataFrame:
     """
     Transform relationship data from staging to warehouse-ready Spark DataFrame.
     """

@@ -4,7 +4,7 @@ from src.warehouse.extract.extract_db_pyspark import extract_database as extract
 from src.warehouse.extract.extract_db_pyspark import extract_database as extract_db_pyspark_staging
 from src.warehouse.transform.dim_company_pyspark import transform_dim_company_spark
 from src.warehouse.transform.dim_people_pyspark import transform_dim_people_spark
-from src.warehouse.transform.dim_relationship_pyspark import transform_dim_relationship_spark
+from warehouse.transform.fact_relationship_pyspark import transform_fact_relationship_spark
 from src.warehouse.transform.fact_acquisitions_pyspark import transform_fact_acquisitions_spark
 from src.warehouse.transform.fact_funds_pyspark import transform_fact_funds_spark
 from src.warehouse.transform.fact_ipos_pyspark import transform_fact_ipos_spark
@@ -61,15 +61,6 @@ def pipeline_warehouse():
     # load
     load_warehouse_pyspark_upsert(spark=spark,data=dim_company, table_name='dim_company', schema='public', 
                 idx_name='company_nk', source='staging',table_process='company')
-
-    ## relationship
-    # transform
-    dim_relationship = transform_dim_relationship_spark(spark,relationships_staging,'relationships')
-    # validate
-    report_validation(table_name='relationships', df_spark=dim_relationship, id_col='relationship_nk')
-    # load
-    load_warehouse_pyspark_upsert(spark=spark,data=dim_relationship, table_name='dim_relationship', schema='public', 
-                idx_name='relationship_nk', source='staging',table_process='relationships')
     
     ### Table Fact
     print("Transforming, Validating and Loading data for fact tables...")
@@ -129,8 +120,28 @@ def pipeline_warehouse():
     load_warehouse_pyspark_upsert(spark=spark,data=fact_funds, table_name='fact_funds', schema='public', 
                 idx_name='fund_nk', source='staging',table_process='funds')
     
+    ## relationship
+    # transform
+    fact_relationship = transform_fact_relationship_spark(spark,relationships_staging,'relationships')
+    # validate
+    report_validation(table_name='relationships', df_spark=fact_relationship, id_col='relationship_nk')
+    # load
+    load_warehouse_pyspark_upsert(spark=spark,data=fact_relationship, table_name='fact_relationship', schema='public', 
+                idx_name='relationship_nk', source='staging',table_process='relationships')
 
     # Stop Spark Instance
     spark.stop()
     
     print("==== End Warehouse Pipeline ===")
+
+
+
+################### Deprecated ###########################################
+## relationship
+    # # transform
+    # dim_relationship = transform_dim_relationship_spark(spark,relationships_staging,'relationships')
+    # # validate
+    # report_validation(table_name='relationships', df_spark=dim_relationship, id_col='relationship_nk')
+    # # load
+    # load_warehouse_pyspark_upsert(spark=spark,data=dim_relationship, table_name='dim_relationship', schema='public', 
+    #             idx_name='relationship_nk', source='staging',table_process='relationships')
