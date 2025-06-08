@@ -6,11 +6,12 @@ from src.warehouse.transform.dim_company_pyspark import transform_dim_company_sp
 from src.warehouse.transform.dim_people_pyspark import transform_dim_people_spark
 from src.warehouse.transform.dim_relationship_pyspark import transform_dim_relationship_spark
 from src.warehouse.transform.fact_acquisitions_pyspark import transform_fact_acquisitions_spark
-from src.warehouse.transform.fact_funding_rounds_pyspark import transform_fact_funding_rounds_spark
 from src.warehouse.transform.fact_funds_pyspark import transform_fact_funds_spark
 from src.warehouse.transform.fact_ipos_pyspark import transform_fact_ipos_spark
 from src.warehouse.transform.fact_milestones_pyspark import transform_fact_milestones_spark
-from src.warehouse.transform.fact_investments_pyspark import transform_fact_investments_spark
+from src.warehouse.transform.fact_investment_round_participation_pyspark import transform_investments_spark, transform_funding_rounds_spark
+from src.warehouse.transform.fact_investment_round_participation_pyspark import transform_fact_investment_round_participation
+
 from src.warehouse.load.load_pyspark import load_warehouse_pyspark_upsert
 from src.warehouse.validation.validation import report_validation
 
@@ -73,15 +74,24 @@ def pipeline_warehouse():
     ### Table Fact
     print("Transforming, Validating and Loading data for fact tables...")
     
-    ## Investments
-
-    # transform
-    fact_investments = transform_fact_investments_spark(spark,investments_staging,'investments')
-    # validate
-    report_validation(table_name='investments', df_spark=fact_investments, id_col='investment_nk')
+    ## Investments and Funding Rounds
+    # transform investments
+    transformed_investments = transform_investments_spark(spark,investments_staging,'investments')
+    # transform funding rounds
+    transformed_funding_rounds = transform_funding_rounds_spark(spark,funding_rounds_staging,'funding_rounds')
+    # Combine Transformations
+    fact_investment_round_participation  = transform_fact_investment_round_participation(spark,
+                                                                                         transformed_investments,
+                                                                                         transformed_funding_rounds,
+                                                                                         'investments,funding_rounds')
+    # validate investments
+    investments_columns = ['investment_nk','investee_company_id','investor_company_id']
+    report_validation(table_name='fact_investment_round_participation', df_spark=fact_investment_round_participation, id_col='funding_round_nk')
+    # validate funding rounds
+    report_validation(table_name='funding_rounds', df_spark=fact_investment_round_participation.drop(*investments_columns), id_col='funding_round_nk')
     # load
-    load_warehouse_pyspark_upsert(spark=spark,data=fact_investments, table_name='fact_investments', schema='public', 
-                idx_name='investment_nk', source='staging',table_process='investments')
+    load_warehouse_pyspark_upsert(spark=spark,data=fact_investment_round_participation, table_name='fact_investment_round_participation', schema='public', 
+               idx_name=['investment_nk','funding_round_nk'], source='staging',table_process='investments,funding_rounds')
     
     ## IPOs
     # transform
@@ -100,15 +110,6 @@ def pipeline_warehouse():
     # load
     load_warehouse_pyspark_upsert(spark=spark,data=fact_acquisition, table_name='fact_acquisition', schema='public', 
                 idx_name='acquisition_nk', source='staging',table_process='acquisition')
-
-    ## Funding Rounds
-    # transform
-    fact_funding_rounds = transform_fact_funding_rounds_spark(spark,funding_rounds_staging,'funding_rounds')
-    # validate
-    report_validation(table_name='funding_rounds', df_spark=fact_funding_rounds, id_col='funding_round_nk')
-    # load
-    load_warehouse_pyspark_upsert(spark=spark,data=fact_funding_rounds, table_name='fact_funding_rounds', schema='public', 
-                idx_name='funding_round_nk', source='staging',table_process='funding_rounds')
     
     ## Milestones
     # transform
@@ -128,7 +129,6 @@ def pipeline_warehouse():
     load_warehouse_pyspark_upsert(spark=spark,data=fact_funds, table_name='fact_funds', schema='public', 
                 idx_name='fund_nk', source='staging',table_process='funds')
     
-
 
     # Stop Spark Instance
     spark.stop()
