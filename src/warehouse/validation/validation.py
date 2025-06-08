@@ -51,7 +51,7 @@ def check_all_missing_except_id(df_spark: SparkDataFrame, report: dict, id_col: 
         num_missing = df_missing.count()
         
         # Ambil daftar ID dari baris yang missing
-        list_missing_ids = [row[id_col] for row in df_missing.select(id_col).collect()]
+        list_missing_ids = [row[id_col] for row in df_missing.select(id_col).collect() if row[id_col] is not None]
         
         # Masukkan ke report
         report["report"][colname] = {
