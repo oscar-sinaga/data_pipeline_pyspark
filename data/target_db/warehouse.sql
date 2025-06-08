@@ -63,43 +63,30 @@ CREATE TABLE dim_people (
     created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE dim_relationships (
-    relationship_id BIGSERIAL PRIMARY KEY ,
-    relationship_nk BIGINT UNIQUE,
-    people_id BIGINT,
-    company_id BIGINT,
-    title TEXT,
-    start_at INTEGER,
-    end_at INTEGER,
-    relationship_status VARCHAR(255),
-    relationship_order INT,
-    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (people_id) REFERENCES dim_people(people_id),
-    FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (start_at) REFERENCES dim_date(date_id),
-    FOREIGN KEY (end_at) REFERENCES dim_date(date_id)
-
-);
-
 -- =========================
 -- FACT TABLES
 -- =========================
 
-CREATE TABLE fact_funding_rounds (
-    funding_round_id BIGSERIAL PRIMARY KEY,
-    funding_round_nk BIGINT UNIQUE,
+CREATE TABLE fact_investment_round_participation (
+    investment_round_participation_id BIGSERIAL PRIMARY KEY,
+    investment_nk BIGINT,
+    funding_round_nk BIGINT,
+    investee_company_id BIGINT,
+    investor_company_id BIGINT,
     funded_at INTEGER,
-    company_id BIGINT,  -- ✅ tipe disamakan dengan dim_company
     funding_round_type VARCHAR(255),
     funding_round_code VARCHAR(255),
-    raised_amount_usd NUMERIC(15,2),
-    pre_money_valuation_usd NUMERIC(15,2),
-    post_money_valuation_usd NUMERIC(15,2),
+    raised_amount NUMERIC(15,2),
+    pre_money_valuation NUMERIC(15,2),
+    post_money_valuation NUMERIC(15,2),
+    number_of_participants NUMERIC(15,2),
     round_position_desc VARCHAR(50),
     round_stage_desc VARCHAR(50),
     created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_investment_funding UNIQUE (investment_nk, funding_round_nk),    -- ✅ UNIQUE constraint gabungan dari investment_nk dan funding_round_nk
     FOREIGN KEY (funded_at) REFERENCES dim_date(date_id),
-    FOREIGN KEY (company_id) REFERENCES dim_company(company_id)
+    FOREIGN KEY (investor_company_id) REFERENCES dim_company(company_id),
+    FOREIGN KEY (investee_company_id) REFERENCES dim_company(company_id)
 );
 
 CREATE TABLE fact_acquisition (
@@ -145,18 +132,6 @@ CREATE TABLE fact_funds (
     FOREIGN KEY (funded_at) REFERENCES dim_date(date_id)
 );
 
-CREATE TABLE fact_investments (
-    investment_id BIGSERIAL PRIMARY KEY,
-    investment_nk BIGINT UNIQUE,
-    funding_round_id BIGINT,
-    investor_company_id BIGINT,
-    investee_company_id BIGINT,
-    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (funding_round_id) REFERENCES fact_funding_rounds(funding_round_id),
-    FOREIGN KEY (investor_company_id) REFERENCES dim_company(company_id),
-    FOREIGN KEY (investee_company_id) REFERENCES dim_company(company_id)
-);
-
 CREATE TABLE fact_milestones (
     milestone_id BIGSERIAL PRIMARY KEY,
     milestone_nk BIGINT UNIQUE,
@@ -169,6 +144,23 @@ CREATE TABLE fact_milestones (
     FOREIGN KEY (milestone_at) REFERENCES dim_date(date_id)
 );
 
+CREATE TABLE fact_relationships (
+    relationship_id BIGSERIAL PRIMARY KEY ,
+    relationship_nk BIGINT UNIQUE,
+    people_id BIGINT,
+    company_id BIGINT,
+    title TEXT,
+    start_at INTEGER,
+    end_at INTEGER,
+    relationship_status VARCHAR(255),
+    relationship_order INT,
+    created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (people_id) REFERENCES dim_people(people_id),
+    FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
+    FOREIGN KEY (start_at) REFERENCES dim_date(date_id),
+    FOREIGN KEY (end_at) REFERENCES dim_date(date_id)
+
+);
 
 INSERT INTO dim_date
 SELECT
@@ -208,3 +200,51 @@ FROM generate_series(
     INTERVAL '1 day'
 ) AS g(d);
 
+
+-- -- deprecated
+-- CREATE TABLE dim_relationships (
+--     relationship_id BIGSERIAL PRIMARY KEY ,
+--     relationship_nk BIGINT UNIQUE,
+--     people_id BIGINT,
+--     company_id BIGINT,
+--     title TEXT,
+--     start_at INTEGER,
+--     end_at INTEGER,
+--     relationship_status VARCHAR(255),
+--     relationship_order INT,
+--     created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (people_id) REFERENCES dim_people(people_id),
+--     FOREIGN KEY (company_id) REFERENCES dim_company(company_id),
+--     FOREIGN KEY (start_at) REFERENCES dim_date(date_id),
+--     FOREIGN KEY (end_at) REFERENCES dim_date(date_id)
+
+-- );
+
+-- CREATE TABLE fact_funding_rounds (
+--     funding_round_id BIGSERIAL PRIMARY KEY,
+--     funding_round_nk BIGINT UNIQUE,
+--     funded_at INTEGER,
+--     company_id BIGINT,  -- ✅ tipe disamakan dengan dim_company
+--     funding_round_type VARCHAR(255),
+--     funding_round_code VARCHAR(255),
+--     raised_amount_usd NUMERIC(15,2),
+--     pre_money_valuation_usd NUMERIC(15,2),
+--     post_money_valuation_usd NUMERIC(15,2),
+--     round_position_desc VARCHAR(50),
+--     round_stage_desc VARCHAR(50),
+--     created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (funded_at) REFERENCES dim_date(date_id),
+--     FOREIGN KEY (company_id) REFERENCES dim_company(company_id)
+-- );
+
+-- CREATE TABLE fact_investments (
+--     investment_id BIGSERIAL PRIMARY KEY,
+--     investment_nk BIGINT UNIQUE,
+--     funding_round_id BIGINT,
+--     investor_company_id BIGINT,
+--     investee_company_id BIGINT,
+--     created_at timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (funding_round_id) REFERENCES fact_funding_rounds(funding_round_id),
+--     FOREIGN KEY (investor_company_id) REFERENCES dim_company(company_id),
+--     FOREIGN KEY (investee_company_id) REFERENCES dim_company(company_id)
+-- );
