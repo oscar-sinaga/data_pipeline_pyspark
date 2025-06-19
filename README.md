@@ -1,6 +1,6 @@
 # Proyek Data Pipeline: Startup Ecosystem Analytics
 
-Sebuah data pipeline end-to-end untuk mengintegrasikan, memproses, dan menganalisis data ekosistem startup dari berbagai sumber. Proyek ini dibangun untuk menciptakan satu sumber kebenaran (*single source of truth*) yang memungkinkan analisis mendalam terhadap tren investasi, kinerja perusahaan, dan jaringan para pemain kunci.
+Sebuah data pipeline end-to-end untuk mengintegrasikan, memproses, dan menganalisis data ekosistem startup dari berbagai sumber. Proyek ini dibuat memungkinkan analisis mendalam terhadap tren investasi, kinerja perusahaan, dan jaringan para pemain kunci.
 
 ## Daftar Isi
 - [Proyek Data Pipeline: Startup Ecosystem Analytics](#proyek-data-pipeline-startup-ecosystem-analytics)
@@ -23,9 +23,7 @@ Sebuah data pipeline end-to-end untuk mengintegrasikan, memproses, dan menganali
 ## Requirements Gathering & Solution
 
 ### Latar Belakang Masalah (Background Problem)
-Perusahaan **"VenturePulse"** adalah perusahaan konsultan investasi yang mempunyai klien dari berbagai perusahaan startup hingga institusi keuangan. Dalam menjalankan misinya untuk memberikan wawasan strategis berbasis data, VenturePulse menghadapi kendala utama dalam mengintegrasikan dan menganalisis informasi lintas sumber secara menyeluruh. Keterbatasan akses terhadap data yang tersebar di berbagai format dan lokasi telah menyebabkan sejumlah tantangan kritis berikut:
-
-### Latar Belakang Masalah (Background Problem)
+Perusahaan **"VenturePulse"** adalah perusahaan konsultan investasi yang mempunyai klien dari berbagai perusahaan startup hingga institusi keuangan. Dalam menjalankan misinya, VenturePulse menghadapi kendala utama dalam mengintegrasikan dan menganalisis informasi dan data dari berbagai sumber secara menyeluruh. Informasi dan penjelasan mengenai berbagai data tersebut bisa dilihat di [dataset-doc.md](dataset-doc.md). Keterbatasan dan kerumitan akses terhadap data yang tersebar di berbagai format dan sumber tersebut menyebabkan beberapa masalah bisnis sebagai berikut:
 
 #### 1. Ketidakmampuan Mengevaluasi Momentum Pertumbuhan Secara Akurat
 
@@ -62,9 +60,9 @@ Oleh karena itu perlu dibangun **Data Pipeline Terpusat** yang mengotomatisasi p
 
 Tujuannya adalah menyediakan data yang andal, terintegrasi, dan siap pakai untuk analisis strategis tanpa intervensi manual berlebihan.
 
-### Temuan Awal dari Profiling Data
+### Profiling Data
 
-Proses profiling data mengungkapkan isu kualitas data yang spesifik dan menjadi justifikasi utama untuk setiap langkah dalam proses transformasi ETL. Temuan ini secara langsung berdampak pada kemampuan untuk melakukan analisis bisnis yang diharapkan.
+Proses profiling data membantu mengidentifikasi masalah kualitas data yang spesifik. Temuan ini menjadi dasar penting dalam menentukan langkah-langkah transformasi pada proses ETL, karena langsung memengaruhi keakuratan dan kelengkapan analisis bisnis yang akan dilakukan.
 
 **1. Kelengkapan Data (Completeness) yang Rendah pada Metrik Kunci**
 
@@ -97,8 +95,8 @@ Pipeline terdiri dari beberapa komponen utama:
 
 - **Layers:**
   - **Data Sources:** PostgreSQL, file CSV/JSON, dan API eksternal.
-  - **Staging Layer:** Menyimpan data mentah di PostgreSQL schema `staging`.
-  - **Warehouse Layer:** Menyimpan data terstruktur dalam schema `warehouse` berbasis Star Schema.
+  - **Staging Layer:** Menyimpan data mentah di PostgreSQL schema `staging` untuk proses transformasi lebih lanjut.
+  - **Warehouse Layer:** Menyimpan data terstruktur yang sudah ditransformasi dalam schema `warehouse` berbasis Star Schema.
 
 - **Logging & Monitoring:**
   - Informasi setiap proses etl setiap tabel akan disimpan di tabel database `log` tabel `etl_log`.
@@ -106,35 +104,138 @@ Pipeline terdiri dari beberapa komponen utama:
 - **Validation & Error Handling:**
   - Setiap proses yang error datanya akan disimpan di **minio**. Report hasil hasil validasi juga disimpan di **Minio**.
 
-![Pipeline Design](https://i.imgur.com/7g2tVjQ.png)
+![Pipeline Design](picture/data_pipeline_workflow.drawio.png)
 
 ## Desain Target Database (Data Warehouse)
 
-Struktur database menggunakan pendekatan **Kimball's Star Schema**.
+Struktur data warehouse dirancang berdasarkan prinsip **Kimball** menggunakan pendekatan **Star Schema**. Model ini menjadikan **tabel fakta** sebagai pusat penyimpanan peristiwa bisnis yang terukur, dikelilingi oleh **tabel dimensi** yang memberikan konteks ("siapa", "apa", "kapan", "di mana").
 
-- **Fakta:**
-  - `fact_investment_round_participation`
-  - `fact_acquisitions`
-  - `fact_ipos`
-  - `fact_funds`
-  - `fact_milestones`
-  - `fact_relationship`
-- **Dimensi:**
-  - `dim_company`
-  - `dim_people`
-  - `dim_date`
+---
 
-Pemetaan source-to-target disediakan dalam dokumen terpisah.
+### 🧭 Proses Bisnis 1: Evaluasi Perjalanan Pendanaan dan Pertumbuhan Startup
+
+Fokus: Mengukur aliran modal, momentum pertumbuhan, dan jaringan pendanaan startup.
+
+#### Tabel Fakta:
+- **`fact_investment_round_participation`**
+  - **Grain:** Satu baris mewakili satu partisipasi unik perusahaan investor dalam satu putaran pendanaan.
+  - **Peran:** Tabel paling krusial untuk analisis pendanaan. Tabel ini memungkinkan analisis jaringan co-investor dan menjawab pertanyaan seperti "siapa berinvestasi bersama siapa?"
+
+- **`fact_funds`**
+  - **Grain:** Satu baris per peristiwa penerimaan dana non-formal oleh sebuah perusahaan.
+  - **Peran:** Melengkapi total modal yang diterima perusahaan di luar funding round formal.
+
+- **`fact_milestones`**
+  - **Grain:** Satu baris per pencapaian milestone spesifik.
+  - **Peran:** Memberikan konteks kualitatif terhadap angka pendanaan dan menjawab "mengapa" perusahaan dianggap layak menerima investasi.
+
+#### Tabel Dimensi:
+- **`dim_company`**
+  - **Peran:** Dimensi konform yang mewakili perusahaan, berperan ganda sebagai investee dan investor.
+  - **Grain:** Satu baris per perusahaan.
+
+- **`dim_date`**
+  - **Peran:** memberikan kerangka waktu untuk seluruh analisis tren pendanaan.
+  - **Grain:** Satu baris per hari kalender.
+
+---
+
+### 🚀 Proses Bisnis 2: Analisis Strategi Exit dan Kinerja Pasar Startup
+
+Fokus: Menganalisis peristiwa puncak seperti akuisisi dan IPO dalam siklus hidup startup.
+
+#### Tabel Fakta:
+- **`fact_acquisitions`**
+  - **Grain:** Satu baris per peristiwa akuisisi.
+  - **Peran:** Merekam volume dan nilai M&A sebagai indikator likuiditas pasar startup.
+
+- **`fact_ipos`**
+  - **Grain:** Satu baris per peristiwa IPO.
+  - **Peran:** Mengukur jalur exit alternatif melalui pasar publik dan memungkinkan perbandingan antar strategi exit.
+
+#### Tabel Dimensi:
+- **`dim_company`**
+  - **Peran:** Memainkan banyak peran sebagai pengakuisisi, yang diakuisisi, dan perusahaan yang IPO.
+  - **Grain:** Satu baris per perusahaan.
+
+- **`dim_date`**
+  - **Peran:** Memungkinkan analisis tren exit dari waktu ke waktu.
+  - **Grain:** Satu baris per hari.
+
+---
+
+### 🌐 Proses Bisnis 3: Pemetaan Ekosistem dan Jaringan Penggerak Startup
+
+Fokus: Memetakan kontribusi individu dan relasi dalam pertumbuhan ekosistem startup.
+
+#### Tabel Fakta:
+- **`fact_person_company_relationship`**
+  - **Grain:** Satu baris per hubungan kerja spesifik antara seorang individu dan perusahaan.
+  - **Peran:** Sumber utama pemetaan modal manusia, sangat penting untuk pelacakan karier dan analisis jaringan profesional.
+
+- **`fact_milestones`**
+  - **Grain:** Satu baris per peristiwa milestone spesifik.
+  - **Peran:** Memetakan hasil kerja dan bukti inovasi individu/perusahaan. Dapat digunakan untuk mengidentifikasi wilayah dengan frekuensi inovasi tinggi.
+
+#### Tabel Dimensi:
+- **`dim_people`**
+  - **Peran:** Subjek utama dari pemetaan individu dan karier.
+  - **Grain:** Satu baris per individu unik.
+
+- **`dim_company`**
+  - **Peran:** memberikan konteks lokasi organisasi atau perusahaan dan hubungan profesional.
+  - **Grain:** Satu baris per perusahaan.
+
+- **`dim_date`**
+  - **Peran:** Menyediakan kerangka temporal untuk aktivitas profesional.
+  - **Grain:** Satu baris per hari kalender.
+
+---
+
+### 🧾 Ringkasan Final Desain Data Warehouse
+
+#### ✅ Tabel Dimensi (Memberikan Konteks "Siapa, Apa, Di Mana, Kapan")
+| Nama Tabel    | Peran                                           | Grain                    |
+|---------------|--------------------------------------------------|--------------------------|
+| `dim_date`    | Waktu standar untuk seluruh peristiwa            | Satu baris per hari      |
+| `dim_company` | Representasi unik perusahaan & lokasi            | Satu baris per perusahaan|
+| `dim_people`  | Representasi unik individu (talenta/startup actor)| Satu baris per individu  |
+
+#### 📊 Tabel Fakta (Perekam Peristiwa & Ukuran Bisnis)
+| Nama Tabel                          | Peran                                                                 | Grain                                             |
+|------------------------------------|------------------------------------------------------------------------|---------------------------------------------------|
+| `fact_investment_round_participation` | Partisipasi investor dalam putaran pendanaan                            | Per partisipasi investor per putaran              |
+| `fact_funds`                       | Dana yang diterima di luar funding round formal                         | Per peristiwa penerimaan dana                     |
+| `fact_acquisitions`               | Akuisisi startup                                                       | Per peristiwa akuisisi                            |
+| `fact_ipos`                       | IPO startup                                                           | Per peristiwa IPO                                 |
+| `fact_milestones`                | Pencapaian penting/inovasi startup (Factless Fact Table)              | Per milestone                                     |
+| `fact_relationship`              | Relasi kerja antara individu dan perusahaan (Factless Fact Table)     | Per hubungan kerja                                |
+
+---
+
+Pemetaan source-to-target disediakan dalam dokumen terpisah ya [source_to_target_mapping](source_to_target_mapping.md)
 
 ## Desain Alur Kerja ETL
 
-1. **Extract:** PySpark menarik data dari sumber dan menyimpannya ke *Staging Layer* PostgreSQL.
-2. **Transform:**
+### Staging Layer
+1. **Extract:** PySpark menarik data dari berbagai sumber (API, database source dan spreadsheet).
+2. **Load:** Data yang sudah ditarik dari berbagai sumber oleh Pyspark kemudian akan disimpan ke **Database Staging** PostgreSQL.  
+
+### Warehouse Layer
+1. **Extract:** Data raw yang sudah disimpan di *Database Staging** kemudian diextract lagi oleh pyspark untuk proses transformasi. 
+  
+2. **Transform:** 
+Data yang sudah diextract kemudian akan dilakukan :
    - Pembersihan data (null, duplikat)
    - Standarisasi format
    - Enrichment kolom
    - Integrasi tabel berdasarkan `object_id`
-3. **Load:** Data hasil transformasi dimuat ke warehouse secara *incremental* (insert/update).
+
+3. **Validation:** Data hasil transformasi kemudian divalidasi dan report hasil validasinya disimpan pada **Data Storage Minio**.  
+
+4. **Load:** Data hasil transformasi dimuat ke warehouse secara *incremental* (insert/update).
+
+Jika salah satu proses gagal maka data yang gagal diproses akan disimpan di **Minio**. Setiap proses ETL pada setiap tabel, informasi lognya akan disimpan pada **Database Log**
 
 ## Teknologi yang Digunakan
 
@@ -143,27 +244,78 @@ Pemetaan source-to-target disediakan dalam dokumen terpisah.
 - **Penyimpanan:**
   - PostgreSQL (Staging & Warehouse)
   - Minio (data profiling dan data hasil validasi)
-- **Orkestrasi & Containerization:** Docker, Docker Compose
+- **Containerization:** Docker, Docker Compose
 
 ## Cara Menjalankan Pipeline
 
 1. **Prasyarat:**
    - Docker & Docker Compose
-2. **Langkah Setup:**
+
+2. **Clone Repo:**
    ```bash
-   git clone <url-repo>
-   cd <nama-repo>
-   cp .env.example .env  # lalu sesuaikan jika perlu
-3.  **Membangun dan Menjalankan Services**:
-    * Jalankan perintah berikut untuk membangun image dan menjalankan semua service (Spark, PostgreSQL, Minio) di background:
-        ```bash
-        docker-compose up -d --build
-        ```
-4.  **Memicu ETL Job**:
-    * Untuk menjalankan pipeline, eksekusi skrip Spark menggunakan `spark-submit` di dalam container `spark-master`:
-        ```bash
-        docker-compose exec spark-master spark-submit --master spark://spark-master:7077 /app/src/main.py
-        ```
+   git clone https://github.com/oscar-sinaga/data_pipeline_pyspark.git
+   cd data_pipeline_pyspark
+3. **Create env.file di project repo:**
+   ```bash
+    # === ENV UNTUK LOCAL DEVELOPMENT ===
+    DB_HOST=localhost
+    # untuk dipakai jika dijalankan dari container lain
+    # DB_HOST=source_db  
+
+    DB_USER=postgres
+    DB_PORT=5444
+    DB_PASS=cobapassword
+    DB_NAME_STARTUP_INVESTMENTS=startup_investments
+    CRED_PATH=creds/opportune-mile-415309-a66de863c40a.json
+    KEY_SPREADSHEET_PEOPLE=1GrGl6WkBhdTvGJ_o3wtGNRqvpFx7Dpxr9v53NbxCbDc
+    KEY_SPREADSHEET_RELATIONSHIPS=12krNH752qF-S5ByaAgA30p3KyCgGPWo7EivN46odUDU
+
+    # Warehouse
+    DB_PORT_WH=5445 
+    DB_NAME_LOG=etl_log
+    DB_NAME_STG=staging
+    DB_NAME_WH=warehouse
+    DB_PORT_STG=5445
+    DB_PORT_LOG=5445
+    DB_PORT_WH=5445
+
+    # MinIO Config
+    MINIO_HOST=localhost
+    # MINIO_HOST=minio
+    MINIO_PORT=9666
+    MINIO_CONSOLE_PORT=9003
+    MINIO_ROOT_USER=oscar
+    MINIO_ROOT_PASSWORD=oscar123
+    ACCESS_KEY_MINIO=I7wiDc74Am6nvBXIzAS8
+    SECRET_KEY_MINIO=hGFpEWegZ5p1z1OHzdYkjEJT6IYEs4FD2x0sAA8d
+    PROFILING_BUCKET_NAME=profiling-startup-investments
+    ERROR_STAGING_SI_BUCKET_NAME=error-startup-investments
+    ```
+
+4. **Create Minio and Spredsheet Credentials**
+
+    Terlebih dahulu buat credentials untuk minio dan dan credentials untuk akses ke spreadsheetnya. Disini file `data\source\people.csv` dan `data\source\relationships.csv` perlu di upload ke gdrive dijadikan spreadsheet  dan akses ke api spreadsheetnya akan diambil berdasarkan credentials yang digenerate oleh **Google Data Cloud Servive**.
+
+5. **Save the credentials**
+  ```bash
+    # Buat folder creds
+    mkdir data/creds
+  ```
+  Simpan credentials di folder `data/creds`
+
+6.  **Membangun dan Menjalankan Services**:
+    
+    Jalankan perintah berikut untuk membangun image dan menjalankan semua service (Spark, PostgreSQL, Minio) di background:
+    ```bash
+    docker-compose up -d --build
+    ```
+7.  **Memicu ETL Job**:
+    
+    Untuk menjalankan pipeline, eksekusi skrip Spark menggunakan `spark-submit` di dalam container `spark-master`:
+
+    ```bash
+    docker-compose exec spark-master spark-submit --master spark://spark-master:7077 /app/src/main.py
+    ```
 
 ## Hasil yang Diharapkan dari Setiap Analisis
 
