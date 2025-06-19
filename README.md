@@ -1,114 +1,182 @@
-# Proyek Data Pipeline Ekosistem Startup
+# Proyek Data Pipeline: Startup Ecosystem Analytics
+
+Sebuah data pipeline end-to-end untuk mengintegrasikan, memproses, dan menganalisis data ekosistem startup dari berbagai sumber. Proyek ini dibangun untuk menciptakan satu sumber kebenaran (*single source of truth*) yang memungkinkan analisis mendalam terhadap tren investasi, kinerja perusahaan, dan jaringan para pemain kunci.
 
 ## Daftar Isi
-- [Proyek Data Pipeline Ekosistem Startup](#proyek-data-pipeline-ekosistem-startup)
+- [Proyek Data Pipeline: Startup Ecosystem Analytics](#proyek-data-pipeline-startup-ecosystem-analytics)
   - [Daftar Isi](#daftar-isi)
   - [Requirements Gathering \& Solution](#requirements-gathering--solution)
-    - [Background Problem](#background-problem)
-    - [Proposed solutions](#proposed-solutions)
-    - [Profiling Data](#profiling-data)
-    - [Design Pipeline](#design-pipeline)
-  - [Design Target Database](#design-target-database)
-  - [Design of the ETL Pipeline](#design-of-the-etl-pipeline)
-  - [Stack or tools or libraries used](#stack-or-tools-or-libraries-used)
-  - [How the ETL Pipeline works and how to run it](#how-the-etl-pipeline-works-and-how-to-run-it)
-  - [Expected Output for each Process](#expected-output-for-each-process)
-
----
+    - [Latar Belakang Masalah (Background Problem)](#latar-belakang-masalah-background-problem)
+    - [Latar Belakang Masalah (Background Problem)](#latar-belakang-masalah-background-problem-1)
+      - [1. Ketidakmampuan Mengevaluasi Momentum Pertumbuhan Secara Akurat](#1-ketidakmampuan-mengevaluasi-momentum-pertumbuhan-secara-akurat)
+      - [2. Analisis Strategi *Exit* yang Terfragmentasi](#2-analisis-strategi-exit-yang-terfragmentasi)
+      - [3. Keterbatasan dalam Pemetaan Jaringan Modal Manusia](#3-keterbatasan-dalam-pemetaan-jaringan-modal-manusia)
+    - [Solusi yang Diusulkan (Proposed Solution)](#solusi-yang-diusulkan-proposed-solution)
+    - [Temuan Awal dari Profiling Data](#temuan-awal-dari-profiling-data)
+    - [Desain Arsitektur Pipeline](#desain-arsitektur-pipeline)
+  - [Desain Target Database (Data Warehouse)](#desain-target-database-data-warehouse)
+  - [Desain Alur Kerja ETL](#desain-alur-kerja-etl)
+  - [Teknologi yang Digunakan](#teknologi-yang-digunakan)
+  - [Cara Menjalankan Pipeline](#cara-menjalankan-pipeline)
+  - [Hasil yang Diharapkan dari Setiap Analisis](#hasil-yang-diharapkan-dari-setiap-analisis)
 
 ## Requirements Gathering & Solution
 
-### Background Problem
+### Latar Belakang Masalah (Background Problem)
+Perusahaan **"VenturePulse"** adalah perusahaan konsultan investasi yang mempunyai klien dari berbagai perusahaan startup hingga institusi keuangan. Dalam menjalankan misinya untuk memberikan wawasan strategis berbasis data, VenturePulse menghadapi kendala utama dalam mengintegrasikan dan menganalisis informasi lintas sumber secara menyeluruh. Keterbatasan akses terhadap data yang tersebar di berbagai format dan lokasi telah menyebabkan sejumlah tantangan kritis berikut:
 
-Di **VenturePulse**, firma penasihat investasi kita, tugas utamanya adalah membantu para Venture Capitalist (VC) menemukan startup "unicorn" berikutnya. Namun, proses kerja kita saat ini sangat bergantung pada data yang terpisah-pisah, sehingga menghambat analisis strategis.
+### Latar Belakang Masalah (Background Problem)
 
-Tim analis kita setiap hari menghadapi tantangan dalam menggabungkan data dari tiga sumber utama:
+#### 1. Ketidakmampuan Mengevaluasi Momentum Pertumbuhan Secara Akurat
 
-1.  **Database Internal (PostgreSQL)**: Berisi data investasi dan detail IPO/akuisisi.
-2.  **File CSV**: Berisi informasi para individu kunci (pendiri, investor, dewan direksi).
-3.  **API Eksternal**: Menyediakan data *milestone* atau pencapaian penting perusahaan.
+- **Kondisi:** Data pendanaan (`funding_rounds`, `investments`, `funds`) dan pencapaian (`milestones`) tersedia dari berbagai sumber, namun belum dihubungkan secara eksplisit dalam model analitik.
+- **Masalah:** Sulit untuk menilai dampak langsung dari pendanaan terhadap pertumbuhan startup. Pertanyaan seperti “apakah pendanaan Seri B mendorong peluncuran produk utama?” tidak dapat dijawab secara langsung karena tidak adanya keterkaitan yang jelas antara waktu, sumber dana, dan pencapaian bisnis.
 
-Kondisi ini membuat proses analisis menjadi lambat dan reaktif. Lebih parahnya, fragmentasi data secara langsung menghambat tiga proses bisnis inti yang krusial bagi VenturePulse:
+**Tabel kunci:**
+- `funding_rounds`, `investments`, `funds`, `milestones`
 
-* **Sulit Mengevaluasi Perjalanan Pendanaan & Pertumbuhan Startup**: Data investasi di database tidak sinkron dengan data *milestone* dari API. Akibatnya, kita tidak bisa menjawab pertanyaan vital seperti, *"Apakah pendanaan Seri B kemarin benar-benar mempercepat ekspansi pasar?"* dengan cepat dan akurat.
-* **Analisis Strategi Exit & Kinerja Pasar Tidak Komprehensif**: Informasi tentang akuisisi atau IPO di database terputus dari profil para individu kunci di file CSV. Ini membuat kita mustahil untuk menganalisis pola, seperti *"Apakah startup yang didirikan oleh tim dengan latar belakang teknis cenderung lebih sering diakuisisi?"*.
-* **Mustahil Melakukan Pemetaan Ekosistem & Jaringan Secara Efektif**: Informasi tentang "siapa pemain kunci" tersebar. Menghubungkan seorang investor ke rekam jejak investasinya di database dan pencapaian portofolionya dari API adalah pekerjaan manual yang sangat lambat.
+---
 
-### Proposed solutions
+#### 2. Analisis Strategi *Exit* yang Terfragmentasi
 
-Untuk mengatasi masalah tersebut, solusi yang diusulkan adalah membangun sebuah **data pipeline otomatis** sebagai tulang punggung operasional VenturePulse. Pipeline ini akan menarik data dari ketiga sumber tersebut, membersihkannya, mengintegrasikannya, dan menyajikannya dalam satu Data Warehouse yang terpusat.
+- **Kondisi:** Data akuisisi (`acquisitions`) dan IPO (`ipos`) tersedia dalam database, namun belum dilengkapi dengan atribut deskriptif perusahaan atau waktu yang mendetail untuk mendukung analisis longitudinal dan sektoral.
+- **Masalah:** Tanpa model data yang terstruktur untuk membandingkan aktivitas dan nilai exit, sulit melakukan analisis perbandingan antar industri, waktu, atau jenis strategi exit. Pertanyaan seperti “berapa rata-rata valuasi IPO di sektor fintech dalam 5 tahun terakhir” atau “korporasi mana yang paling sering mengakuisisi startup” tidak bisa dijawab secara efisien.
 
-Tujuannya adalah menciptakan **satu sumber kebenaran (single source of truth)** yang solid. Dengan ini, tim analis bisa beralih dari pekerjaan manual mengolah data mentah menjadi fokus menjawab pertanyaan-pertanyaan strategis yang mendukung proses bisnis inti.
+**Tabel kunci:**
+- `acquisitions`, `ipos`,  `ipos`
 
-Secara spesifik, solusi ini mencakup beberapa tujuan utama:
+---
 
-* **Integrasi Data**: Menggabungkan data dari database PostgreSQL, file CSV/JSON, dan API eksternal ke dalam satu lokasi terpusat.
-* **Transformasi Data**: Membersihkan, menstandarisasi, dan mengubah data mentah menjadi format yang siap dianalisis.
-* **Automasi Pipeline**: Membuat workflow ETL/ELT yang bisa jalan sendiri secara terjadwal, jadi data selalu *fresh*.
-* **Desain Data Warehouse**: Merancang skema database yang dioptimalkan untuk menjawab pertanyaan-pertanyaan analitik dengan cepat.
-* **Dokumentasi**: Membuat panduan yang jelas supaya siapa saja di tim bisa paham arsitektur dan cara menjalankan pipeline ini.
+#### 3. Keterbatasan dalam Pemetaan Jaringan Modal Manusia
 
-### Profiling Data
+- **Kondisi:** Data `relationships` yang menghubungkan individu ke perusahaan tersedia, dan pencapaian perusahaan (`milestones`) juga tersedia, namun belum terintegrasi dalam satu model analitik untuk pelacakan karier dan inovasi.
+- **Masalah:** Sulit melacak jejak kontribusi individu terhadap pertumbuhan dan inovasi lintas perusahaan. Visualisasi jaringan atau analisis dampak modal manusia terhadap performa startup tidak dapat dilakukan secara utuh karena keterbatasan keterkaitan antara individu, peran, dan hasil nyata yang dicapai.
 
-Sebelum mulai, kita "intip" dulu kondisi data mentah kita. Dari hasil profiling awal, ditemukan beberapa masalah klasik:
+**Tabel kunci:**
+- `relationships`, `milestones`, `people`, `company`
 
-* **Database Investasi**: Di kolom `funding_round_type`, ada penulisan yang tidak konsisten, misalnya `'series_a'` dan `'Series A'`. Kolom `raised_amount_usd` juga banyak yang kosong (null).
-* **File CSV Orang**: Kolom `role` juga berantakan, ada yang menulis `'founder'`, ada juga `'Co-Founder'`. Beberapa nama di kolom `full_name` juga kadang kosong.
-* **API Milestone**: Tanggal di `milestone_at` masih dalam format teks (string), bukan format tanggal yang standar. Ini akan menyulitkan perhitungan durasi.
 
-Masalah-masalah seperti ini yang akan kita bereskan di dalam pipeline.
+### Solusi yang Diusulkan (Proposed Solution)
 
-### Design Pipeline
+Oleh karena itu perlu dibangun **Data Pipeline Terpusat** yang mengotomatisasi proses pengumpulan, pembersihan, transformasi, dan pemuatan data dari berbagai sumber ke dalam sebuah **Data Warehouse** tunggal.
 
-Arsitektur pipeline kita akan dibagi menjadi beberapa lapisan agar rapi dan mudah dikelola.
+Tujuannya adalah menyediakan data yang andal, terintegrasi, dan siap pakai untuk analisis strategis tanpa intervensi manual berlebihan.
 
-* **Layers (Lapisan)**
-    * **Staging Layer**: Ibaratnya ini adalah "ruang transit". Semua data dari sumber (database, CSV, API) kita kumpulkan dulu di sini apa adanya, tanpa diubah-ubah. Tujuannya agar kita punya salinan asli data mentah. Kita akan pakai skema `staging` di PostgreSQL untuk ini.
-    * **Warehouse Layer**: Ini adalah "ruang pamer" kita. Data dari *staging* yang sudah dibersihkan, dirapikan, dan digabungkan akan disimpan di sini. Model datanya didesain khusus agar para analis bisa menarik laporan dengan cepat. Kita akan pakai skema `warehouse` di PostgreSQL.
-* **Log**
-    Setiap kali pipeline berjalan, semua aktivitasnya akan dicatat. Kapan mulai, kapan selesai, berapa data yang diproses, apakah ada error, semuanya akan tercatat di sebuah tabel sederhana bernama `pipeline_logs`. Ini sangat penting untuk memantau kesehatan pipeline dan melacak masalah jika terjadi error.
-* **Validation System**
-    Untuk memastikan data yang masuk ke *warehouse* berkualitas, kita akan menambahkan sistem validasi. Contohnya, kita akan pastikan bahwa `company_id` tidak boleh kosong atau `raised_amount_usd` tidak boleh bernilai negatif. Validasi ini akan dijalankan sebelum data dimuat ke *warehouse*.
+### Temuan Awal dari Profiling Data
 
-## Design Target Database
+Proses profiling data mengungkapkan isu kualitas data yang spesifik dan menjadi justifikasi utama untuk setiap langkah dalam proses transformasi ETL. Temuan ini secara langsung berdampak pada kemampuan untuk melakukan analisis bisnis yang diharapkan.
 
-Kita akan menggunakan **Star Schema** untuk Data Warehouse. Desain ini memisahkan data menjadi tabel fakta (berisi angka dan pengukuran, seperti jumlah investasi) dan tabel dimensi (berisi deskripsi atau konteks, seperti nama perusahaan atau kategori).
+**1. Kelengkapan Data (Completeness) yang Rendah pada Metrik Kunci**
 
-* **Tabel Fakta (Contoh)**: `fact_investments`
-* **Tabel Dimensi (Contoh)**: `dim_companies`, `dim_people`, `dim_dates`, `dim_geography`
+Banyak kolom krusial untuk analisis bisnis memiliki persentase *missing values* yang sangat tinggi. Hal ini secara langsung menghambat proses bisnis yang telah didefinisikan:
 
-## Design of the ETL Pipeline
+* **Dampak pada Analisis Pendanaan & Exit:**
+    * Pada tabel `funding_rounds`, data valuasi sangat tidak lengkap, dengan **48.1%** nilai hilang pada `pre_money_currency_code` dan **41.63%** pada `post_money_currency_code`.
+    * Pada tabel `acquisitions`, **81.67%** data `term_code` (tipe akuisisi: cash/stock) hilang.
+    * **Implikasi:** Tanpa data ini, **mustahil** untuk mengevaluasi kinerja pendanaan atau menganalisis strategi *exit* secara komprehensif. Proses ETL harus menerapkan strategi untuk menangani nilai-nilai yang hilang ini sebelum memuatnya ke `fact_investment_round_participation` dan `fact_acquisitions`. 
+      * Pada tabel `funding_rounds`, kolom  `post_money_currency_code` dan `pre_money_currency_code` akan kita drop karena kolom `pre_money_valuation_usd` dan kolom `post_money_valuation_usd` datanya tidak kosong dan sudah dalam usd sehingga tidak perlukan lagi kedua kolom mata tersebut.
+      * Pada tabel `acquisitions` kolom `term_code` akan diisi `Unknown` untuk data yang hilang
 
-Proses ETL (Extract, Transform, Load) kita akan berjalan sebagai berikut:
+* **Dampak pada Pemetaan Jaringan & Karier:**
+    * Tabel `relationship` memiliki data tanggal yang sangat minim: `start_at` hilang **53.48%** dan `end_at` hilang **85.71%**.
+    * **Implikasi:** Ini secara fundamental merusak kemampuan untuk "Memetakan Jaringan Modal Manusia". Analisis durasi karier atau periode aktif seseorang di sebuah perusahaan menjadi tidak akurat. Transformasi pada `fact_relationship` harus mampu menangani tanggal yang kosong ini.
+      * Oleh karena itu kita akan mengisi kedua kolom ini dengan tanggal jauh di masa depan (2100-01-01) untuk menandakan tanggal ini kosong. Sehingga bisa difilter saat analisis nantinya.
 
-1.  **Extract**: Skrip akan mengambil data dari tiga sumber: menarik data dari database PostgreSQL, membaca file CSV terbaru, dan memanggil API milestone. Semua data ini akan dimasukkan ke *Staging Layer*.
-2.  **Transform**: Di sinilah "keajaiban" terjadi. Data di *staging* akan kita bersihkan (menangani nilai kosong, menyeragamkan format), lalu kita gabungkan (misalnya menghubungkan ID perusahaan di data investasi dengan ID di data milestone).
-3.  **Load**: Data yang sudah bersih dan rapi hasil transformasi kemudian dimuat ke dalam tabel-tabel di *Warehouse Layer*.
+* **Dampak pada Analisis Geografis:**
+    * Informasi lokasi pada tabel `company` juga tidak lengkap, seperti `state_code` (**42.36%** hilang) dan `city` (**4.59%** hilang).
+    * **Implikasi:** Analisis berbasis lokasi menjadi kurang andal. Kolom-kolom ini perlu dibersihkan sebelum dimuat ke `dim_company`.
 
-## Stack or tools or libraries used
+**2. Integritas dan Format Data yang Belum Standar**
 
-* **Bahasa Pemrograman**: Python
-* **Manipulasi Data**: Pandas
-* **Database**: PostgreSQL
-* **Orkestrasi (Penjadwalan)**: Bisa dimulai dengan `cron` atau jika lebih kompleks menggunakan Apache Airflow / Prefect.
-* **Manajemen Environment**: `venv` (Python Virtual Environment)
+* **Tipe Data Tanggal:** Sebagian besar kolom tanggal di berbagai tabel (`funding_rounds.funded_at`, `acquisitions.acquired_at`, `relationship.start_at`) ditemukan sebagai tipe data `object` (string), bukan `datetime`.
+* **Implikasi:** Ini menyebabkan semua bentuk analisis berbasis waktu (tren, durasi, dsb.) terhambat. Oleh karena itu semua kolom tanggal harus dikonversi ke format `YYYYMMDD` sebagai *foreign key* ke `dim_date`.
 
-## How the ETL Pipeline works and how to run it
+### Desain Arsitektur Pipeline
 
-1.  **Setup Awal**:
-    * Pastikan Python dan PostgreSQL sudah terpasang.
-    * *Clone* repositori ini.
-    * Buat *virtual environment* (`python -m venv venv`) dan aktifkan.
-    * Install semua *library* yang dibutuhkan dengan `pip install -r requirements.txt`.
-    * Salin file `.env.example` menjadi `.env` dan sesuaikan isinya dengan koneksi database Anda.
-2.  **Menjalankan Pipeline**:
-    * Cukup jalankan skrip utama dari terminal: `python src/main.py`.
-    * Skrip ini akan otomatis menjalankan proses Extract, Transform, dan Load secara berurutan.
+Pipeline terdiri dari beberapa komponen utama:
 
-## Expected Output for each Process
+- **Layers:**
+  - **Data Sources:** PostgreSQL, file CSV/JSON, dan API eksternal.
+  - **Staging Layer:** Menyimpan data mentah di PostgreSQL schema `staging`.
+  - **Warehouse Layer:** Menyimpan data terstruktur dalam schema `warehouse` berbasis Star Schema.
 
-Setelah pipeline ini berjalan, tim analis di VenturePulse bisa mendapatkan hasil berikut untuk setiap proses bisnis:
+- **Logging & Monitoring:**
+  - Informasi setiap proses etl setiap tabel akan disimpan di tabel database `log` tabel `etl_log`.
 
-* **Output untuk Evaluasi Pendanaan**: Sebuah *dashboard* yang menampilkan tren pendanaan per sektor, korelasi antara *funding rounds* dengan peluncuran produk baru, dan pertumbuhan perusahaan setelah mendapatkan investasi.
-* **Output untuk Analisis Strategi Exit**: Laporan yang memetakan jenis-jenis *exit* (IPO vs. Akuisisi) berdasarkan industri, lokasi, dan profil pendiri. Analis bisa dengan mudah menemukan pola-pola yang ada.
-* **Output untuk Pemetaan Ekosistem**: Sebuah visualisasi jaringan yang menghubungkan investor, pendiri, dan perusahaan. Ini memungkinkan analis untuk melihat "siapa kenal siapa" dan mengidentifikasi pemain-pemain kunci di ekosistem.
+- **Validation & Error Handling:**
+  - Setiap proses yang error datanya akan disimpan di **minio**. Report hasil hasil validasi juga disimpan di **Minio**.
+
+![Pipeline Design](https://i.imgur.com/7g2tVjQ.png)
+
+## Desain Target Database (Data Warehouse)
+
+Struktur database menggunakan pendekatan **Kimball's Star Schema**.
+
+- **Fakta:**
+  - `fact_investment_round_participation`
+  - `fact_acquisitions`
+  - `fact_ipos`
+  - `fact_funds`
+  - `fact_milestones`
+  - `fact_relationship`
+- **Dimensi:**
+  - `dim_company`
+  - `dim_people`
+  - `dim_date`
+
+Pemetaan source-to-target disediakan dalam dokumen terpisah.
+
+## Desain Alur Kerja ETL
+
+1. **Extract:** PySpark menarik data dari sumber dan menyimpannya ke *Staging Layer* PostgreSQL.
+2. **Transform:**
+   - Pembersihan data (null, duplikat)
+   - Standarisasi format
+   - Enrichment kolom
+   - Integrasi tabel berdasarkan `object_id`
+3. **Load:** Data hasil transformasi dimuat ke warehouse secara *incremental* (insert/update).
+
+## Teknologi yang Digunakan
+
+- **Bahasa:** Python
+- **Engine Pemrosesan:** Apache Spark (via PySpark)
+- **Penyimpanan:**
+  - PostgreSQL (Staging & Warehouse)
+  - Minio (data profiling dan data hasil validasi)
+- **Orkestrasi & Containerization:** Docker, Docker Compose
+
+## Cara Menjalankan Pipeline
+
+1. **Prasyarat:**
+   - Docker & Docker Compose
+2. **Langkah Setup:**
+   ```bash
+   git clone <url-repo>
+   cd <nama-repo>
+   cp .env.example .env  # lalu sesuaikan jika perlu
+3.  **Membangun dan Menjalankan Services**:
+    * Jalankan perintah berikut untuk membangun image dan menjalankan semua service (Spark, PostgreSQL, Minio) di background:
+        ```bash
+        docker-compose up -d --build
+        ```
+4.  **Memicu ETL Job**:
+    * Untuk menjalankan pipeline, eksekusi skrip Spark menggunakan `spark-submit` di dalam container `spark-master`:
+        ```bash
+        docker-compose exec spark-master spark-submit --master spark://spark-master:7077 /app/src/main.py
+        ```
+
+## Hasil yang Diharapkan dari Setiap Analisis
+
+Setelah pipeline berjalan dan data warehouse terisi, tim analis VenturePulse akan mampu menjawab pertanyaan-pertanyaan strategis dengan cepat:
+
+* **Untuk Evaluasi Pendanaan & Pertumbuhan:**
+    * Membuat dashboard interaktif yang menampilkan tren pendanaan (QoQ, YoY) berdasarkan sektor dan geografi.
+    * Menganalisis korelasi langsung antara peristiwa pendanaan dengan peluncuran produk atau *milestone* penting lainnya.
+
+* **Untuk Analisis Strategi Exit:**
+    * Menghasilkan laporan yang membandingkan valuasi dan frekuensi IPO vs. Akuisisi di berbagai industri.
+    * Mengidentifikasi profil pendiri atau karakteristik perusahaan yang paling sering berujung pada *exit* yang sukses.
+
+* **Untuk Pemetaan Ekosistem:**
+    * Membuat visualisasi jaringan yang memetakan hubungan "investor-perusahaan-pendiri".
+    * Mengidentifikasi pemain kunci dan "super-connectors" dalam ekosistem startup.
