@@ -7,15 +7,28 @@ Sebuah data pipeline end-to-end untuk mengintegrasikan, memproses, dan menganali
   - [Daftar Isi](#daftar-isi)
   - [Requirements Gathering \& Solution](#requirements-gathering--solution)
     - [Latar Belakang Masalah (Background Problem)](#latar-belakang-masalah-background-problem)
-    - [Latar Belakang Masalah (Background Problem)](#latar-belakang-masalah-background-problem-1)
       - [1. Ketidakmampuan Mengevaluasi Momentum Pertumbuhan Secara Akurat](#1-ketidakmampuan-mengevaluasi-momentum-pertumbuhan-secara-akurat)
       - [2. Analisis Strategi *Exit* yang Terfragmentasi](#2-analisis-strategi-exit-yang-terfragmentasi)
       - [3. Keterbatasan dalam Pemetaan Jaringan Modal Manusia](#3-keterbatasan-dalam-pemetaan-jaringan-modal-manusia)
     - [Solusi yang Diusulkan (Proposed Solution)](#solusi-yang-diusulkan-proposed-solution)
-    - [Temuan Awal dari Profiling Data](#temuan-awal-dari-profiling-data)
+    - [Profiling Data](#profiling-data)
     - [Desain Arsitektur Pipeline](#desain-arsitektur-pipeline)
   - [Desain Target Database (Data Warehouse)](#desain-target-database-data-warehouse)
+    - [🧭 Proses Bisnis 1: Evaluasi Perjalanan Pendanaan dan Pertumbuhan Startup](#-proses-bisnis-1-evaluasi-perjalanan-pendanaan-dan-pertumbuhan-startup)
+      - [Tabel Fakta:](#tabel-fakta)
+      - [Tabel Dimensi:](#tabel-dimensi)
+    - [🚀 Proses Bisnis 2: Analisis Strategi Exit dan Kinerja Pasar Startup](#-proses-bisnis-2-analisis-strategi-exit-dan-kinerja-pasar-startup)
+      - [Tabel Fakta:](#tabel-fakta-1)
+      - [Tabel Dimensi:](#tabel-dimensi-1)
+    - [🌐 Proses Bisnis 3: Pemetaan Ekosistem dan Jaringan Penggerak Startup](#-proses-bisnis-3-pemetaan-ekosistem-dan-jaringan-penggerak-startup)
+      - [Tabel Fakta:](#tabel-fakta-2)
+      - [Tabel Dimensi:](#tabel-dimensi-2)
+    - [🧾 Ringkasan Final Desain Data Warehouse](#-ringkasan-final-desain-data-warehouse)
+      - [✅ Tabel Dimensi (Memberikan Konteks "Siapa, Apa, Di Mana, Kapan")](#-tabel-dimensi-memberikan-konteks-siapa-apa-di-mana-kapan)
+      - [📊 Tabel Fakta (Perekam Peristiwa \& Ukuran Bisnis)](#-tabel-fakta-perekam-peristiwa--ukuran-bisnis)
   - [Desain Alur Kerja ETL](#desain-alur-kerja-etl)
+    - [Staging Layer](#staging-layer)
+    - [Warehouse Layer](#warehouse-layer)
   - [Teknologi yang Digunakan](#teknologi-yang-digunakan)
   - [Cara Menjalankan Pipeline](#cara-menjalankan-pipeline)
   - [Hasil yang Diharapkan dari Setiap Analisis](#hasil-yang-diharapkan-dari-setiap-analisis)
@@ -257,37 +270,33 @@ Jika salah satu proses gagal maka data yang gagal diproses akan disimpan di **Mi
    cd data_pipeline_pyspark
 3. **Create env.file di project repo:**
    ```bash
-    # === ENV UNTUK LOCAL DEVELOPMENT ===
-    DB_HOST=localhost
-    # untuk dipakai jika dijalankan dari container lain
-    # DB_HOST=source_db  
-
+    # DB Source
+    DB_HOST_STARTUP_INVESTMENTS=source_db
     DB_USER=postgres
-    DB_PORT=5444
+    DB_PORT=5432
     DB_PASS=cobapassword
     DB_NAME_STARTUP_INVESTMENTS=startup_investments
-    CRED_PATH=creds/opportune-mile-415309-a66de863c40a.json
+    CRED_PATH=configs/creds/opportune-mile-415309-a66de863c40a.json
     KEY_SPREADSHEET_PEOPLE=1GrGl6WkBhdTvGJ_o3wtGNRqvpFx7Dpxr9v53NbxCbDc
     KEY_SPREADSHEET_RELATIONSHIPS=12krNH752qF-S5ByaAgA30p3KyCgGPWo7EivN46odUDU
 
-    # Warehouse
-    DB_PORT_WH=5445 
+    # DB Pipeline
+    DB_HOST_PIPELINE=pipeline_db
     DB_NAME_LOG=etl_log
     DB_NAME_STG=staging
     DB_NAME_WH=warehouse
-    DB_PORT_STG=5445
-    DB_PORT_LOG=5445
-    DB_PORT_WH=5445
+    DB_PORT_STG=5432
+    DB_PORT_LOG=5432
+    DB_PORT_WH=5432
 
     # MinIO Config
-    MINIO_HOST=localhost
-    # MINIO_HOST=minio
-    MINIO_PORT=9666
-    MINIO_CONSOLE_PORT=9003
+    MINIO_HOST=minio
+    MINIO_PORT=9000
+    MINIO_CONSOLE_PORT=9001
     MINIO_ROOT_USER=oscar
     MINIO_ROOT_PASSWORD=oscar123
-    ACCESS_KEY_MINIO=I7wiDc74Am6nvBXIzAS8
-    SECRET_KEY_MINIO=hGFpEWegZ5p1z1OHzdYkjEJT6IYEs4FD2x0sAA8d
+    ACCESS_KEY_MINIO=URsIRcb2pvvQEoDolq8t
+    SECRET_KEY_MINIO=eI1OBPEATrapvpn2g22ra16qX4hjBr31UURdbtEr
     PROFILING_BUCKET_NAME=profiling-startup-investments
     ERROR_STAGING_SI_BUCKET_NAME=error-startup-investments
     ```
@@ -314,7 +323,7 @@ Jika salah satu proses gagal maka data yang gagal diproses akan disimpan di **Mi
     Untuk menjalankan pipeline, eksekusi skrip Spark menggunakan `spark-submit` di dalam container `spark-master`:
 
     ```bash
-    docker-compose exec spark-master spark-submit --master spark://spark-master:7077 /app/src/main.py
+    docker exec -it spark-master bash scripts/start.sh
     ```
 
 ## Hasil yang Diharapkan dari Setiap Analisis
