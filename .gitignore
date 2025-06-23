@@ -10,3 +10,6 @@ __pycache__/
 creds/
 .vscode/
 .ipynb_checkpoints/
+
+#ignore minio file
+data/minio
