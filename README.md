@@ -1,4 +1,4 @@
-# Proyek Data Pipeline: Startup Ecosystem Analytics
+# Proyek Data Pipeline: Startup Ecosystem
 
 Sebuah data pipeline end-to-end untuk mengintegrasikan, memproses, dan menganalisis data ekosistem startup dari berbagai sumber. Proyek ini dibuat memungkinkan analisis mendalam terhadap tren investasi, kinerja perusahaan, dan jaringan para pemain kunci.
 
